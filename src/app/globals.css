@@ -1,0 +1,109 @@
+@import "../styles/design-tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { height: 100%; }
+body { margin: 0; }
+
+/* 用户自己产出的内容（日记/用户气泡/剧本叙事）一律衬线，与 UI 的無衬线区分 */
+.content-serif { font-family: var(--font-serif); }
+
+/* 桌面端锁定 480px「手机画布」居中，两侧森林渐变 */
+.phone-frame {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-ambient);
+}
+@media (min-width: 900px) {
+  body { background: linear-gradient(135deg, var(--forest-100), var(--wood-100)); }
+}
+
+/* 可滚动主区，底部留出导航高度 */
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--gap-page-x);
+  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 20px);
+}
+
+.bottom-nav {
+  height: var(--nav-height);
+  padding-bottom: env(safe-area-inset-bottom);
+  display: flex;
+  border-top: 1px solid var(--divider);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+/* ---------- 允许的微动效（禁止弹跳/弹簧/旋转/脉冲） ---------- */
+/* 幅度锁死 3%（DESIGN §1.6.2），再大就从「呼吸」变成「脉冲」 */
+@keyframes breathe { 0%,100% { transform: scale(1); opacity: .92 } 50% { transform: scale(1.03); opacity: 1 } }
+.breathe { animation: breathe var(--dur-breath) var(--ease-breath) infinite; }
+
+@keyframes swayA { 0%,100% { transform: translateX(0) } 50% { transform: translateX(6px) } }
+.sway-a { animation: swayA 31s var(--ease-in-out) infinite; }
+@keyframes swayB { 0%,100% { transform: translateX(0) } 50% { transform: translateX(-8px) } }
+.sway-b { animation: swayB 24s var(--ease-in-out) infinite; }
+
+@keyframes glowpulse { 0%,100% { opacity: .45 } 50% { opacity: .85 } }
+.glow { animation: glowpulse 12s var(--ease-in-out) infinite; }
+
+@keyframes fadeup { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
+.fade-up { animation: fadeup var(--dur-base) var(--ease-out) both; }
+
+/* AI 思考中：3 个 5px 圆点依次 opacity .3→1，周期 1.4s，不跳动（DESIGN §1.6.3） */
+@keyframes typing { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+.typing i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--text-tertiary); margin: 0 3px; animation: typing 1.4s var(--ease-in-out) infinite; }
+.typing i:nth-child(2) { animation-delay: .23s }
+.typing i:nth-child(3) { animation-delay: .46s }
+
+/* 流式光标：2×18 竖条淡入淡出，不用闪烁方块（DESIGN §1.6.3） */
+@keyframes caret { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+.caret {
+  display: inline-block; width: 2px; height: 18px; vertical-align: -3px;
+  margin-left: 2px; background: var(--forest-500);
+  animation: caret 1.2s var(--ease-in-out) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathe, .sway-a, .sway-b, .glow, .fade-up, .typing i, .caret { animation: none !important; }
+}
+
+/* ---------- 桌游卡牌 KeepCard：真实 3D 翻面（DESIGN 例外 E-3） ---------- */
+/* 翻面用 rotateY 呈现正/反面内容，是内容呈现而非装饰性旋转，故放行。
+   触发方式：点击（非 hover）。reduced-motion 下退化为 opacity 交叉淡入（见下方媒体查询）。 */
+.keepcard { perspective: 900px; }
+.keepcard-inner {
+  position: relative; width: 100%; height: 100%;
+  transition: transform var(--dur-flip) var(--ease-card);
+  transform-style: preserve-3d;
+}
+.keepcard.flipped .keepcard-inner { transform: rotateY(180deg); }
+.keepcard-face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  overflow: hidden; border-radius: var(--r-card);
+}
+.keepcard-back { transform: rotateY(180deg); }
+.keepcard-front { transition: opacity var(--dur-base) ease; }
+
+/* 选中态：用外环 + 卡缘加深表达，不靠颜色或放大的「选中感」 */
+.keepcard.selected .keepcard-front,
+.keepcard.selected .keepcard-back { outline: 2px solid var(--forest-700); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .keepcard-inner { transform: none !important; transition: none; }
+  .keepcard-back { transform: none; opacity: 0; transition: opacity 160ms ease; }
+  .keepcard-front { transition: opacity 160ms ease; }
+  .keepcard.flipped .keepcard-front { opacity: 0; }
+  .keepcard.flipped .keepcard-back { opacity: 1; }
+}

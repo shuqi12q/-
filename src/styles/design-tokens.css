@@ -1,0 +1,303 @@
+/* ============================================================
+   森林晨雾 Morning Mist Forest — Design Tokens  v1.0
+   源文件：/DESIGN.md   请勿在组件中偏离这些取值
+   用法：在 src/app/globals.css 顶部  @import "../styles/design-tokens.css";
+   ============================================================ */
+
+:root{
+  /* ---------- 背景层 ---------- */
+  --bg-base:#F7F5F0;          /* 页面底 · 暖奶白（不用纯白，深夜刺眼） */
+  --bg-elevated:#FFFDFA;      /* 卡片 / 浮层面 */
+  --bg-sunken:#EFEBE3;        /* 凹陷区 */
+  --bg-tint:#EEF3EE;          /* 森林色浅染 · 引用块 */
+  --bg-scrim:rgba(22,29,25,.55);
+
+  /* ---------- 主色 森林绿 ---------- */
+  --forest-900:#2F4238;       /* 9.84:1 on bg-base */
+  --forest-700:#4A6B57;       /* 主交互色 5.46:1 */
+  --forest-600:#3E5B4A;       /* hover */
+  --forest-500:#7C9885;       /* 装饰 · 不可用于正文 */
+  --forest-300:#B8CBBD;
+  --forest-100:#DDE7DE;
+  --forest-50:#EEF3EE;
+
+  /* ---------- 辅助 暖木（画面占比 ≤10%） ---------- */
+  --wood-700:#8A5A38;         /* 5.36:1 */
+  --wood-500:#C08A5E;
+  --wood-300:#E2C6A6;
+  --wood-100:#F5E9DA;
+  --wood-glow:#F0E2C8;        /* 仅用于 SVG 光斑渐变 */
+
+  /* ---------- 冷调 雾 ---------- */
+  --mist-600:#456B71;         /* info 5.36:1 */
+  --mist-300:#C5D3D1;
+  --mist-100:#E4EBE9;
+
+  /* ---------- 文字 ---------- */
+  --text-primary:#2F3A33;     /* 10.86:1 */
+  --text-secondary:#5C6B60;   /*  5.17:1 */
+  --text-tertiary:#64716A;    /*  4.69:1  ← 已刻意加深以通过 WCAG AA，不要再调浅 */
+  --text-disabled:#9AA69E;    /* 仅禁用态，不承载信息 */
+  --text-inverse:#FFFDFA;
+
+  /* ---------- 关怀 / 危机（唯一高注意力色） ----------
+     使用边界：仅 L2 资源卡 / L3 全屏干预层 / /me/help
+     禁止用于：表单校验、删除按钮、任何 toast              */
+  --care-700:#9C4F3F;         /* 对 bg-elevated 5.74:1 ✓ · 对 bg-base 5.35:1 ✓ */
+  --care-600:#874334;
+  --care-100:#F6EAE6;
+  --care-on:#FFFDFA;          /* Care 按钮【文字色】。浅色=白字，深色下自动反转为深底字。
+                                 ⚠️ 按钮务必写 color:var(--care-on)，不要硬编码 #fff */
+
+  /* ---------- 情绪 valence（5 态打卡 + 日历热力图） ----------
+     刻意避开红绿交通灯：心情不好 ≠ 错误                     */
+  --v-pos2:#8FAF8E;  /* 很好   */
+  --v-pos1:#B5C79B;  /* 还行   */
+  --v-zero:#D9CFB8;  /* 一般   */
+  --v-neg1:#C0A48C;  /* 不太好 */
+  --v-neg2:#A08277;  /* 很糟   */
+  --v-none:#E8E4DC;  /* 未记录 */
+
+  /* ---------- 字体 ----------
+     分工铁律：用户产出的内容(日记正文/用户气泡/剧本叙事) = serif
+              全部 UI(按钮/导航/标签/AI 气泡)            = sans   */
+  --font-sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB",
+              "Microsoft YaHei","Source Han Sans SC","Noto Sans CJK SC",system-ui,sans-serif;
+  --font-serif:"Songti SC","Source Han Serif SC","Noto Serif CJK SC","SimSun",Georgia,serif;
+  --font-mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+
+  /* 字号（中文行高必须 ≥1.7，字距 0.02em） */
+  --fs-h1:28px;      --lh-h1:1.35;
+  --fs-h2:22px;      --lh-h2:1.40;
+  --fs-h3:18px;      --lh-h3:1.50;
+  --fs-body-lg:17px; --lh-body-lg:1.80;
+  --fs-body:15px;    --lh-body:1.70;
+  --fs-caption:13px; --lh-caption:1.60;
+  --fs-overline:12px;--ls-overline:.08em;
+  --fs-button:16px;
+  --fs-nav:11px;
+  --ls-cjk:.02em;
+
+  /* ---------- 间距（一律 4 的倍数） ---------- */
+  --sp-1:4px;  --sp-2:8px;  --sp-3:12px; --sp-4:16px; --sp-5:20px;
+  --sp-6:24px; --sp-8:32px; --sp-10:40px;--sp-12:48px;--sp-16:64px;--sp-20:80px;
+
+  --gap-page-x:16px;      /* 页面左右安全边距 */
+  --gap-card-inner:20px;  /* 卡片内 padding */
+  --gap-card-stack:16px;  /* 卡片之间 */
+  --gap-section:32px;
+  --gap-section-lg:48px;
+  --gap-inline:8px;
+  --gap-para:16px;
+  --nav-height:56px;
+  --nav-safe:calc(56px + env(safe-area-inset-bottom));
+
+  /* ---------- 圆角（统一偏大，严禁混用） ---------- */
+  --r-xs:8px; --r-sm:12px; --r-md:16px; --r-lg:20px;
+  --r-xl:28px; --r-2xl:36px; --r-full:999px;
+  /* 卡片一律 --r-lg；主按钮一律 --r-full；
+     气泡不对称：AI 20/20/20/6，用户 20/20/6/20 */
+
+  /* ---------- 阴影（不透明度上限 .10，色调用 forest-900） ---------- */
+  --shadow-xs:0 1px 2px rgba(47,66,56,.04);
+  --shadow-sm:0 2px 8px rgba(47,66,56,.05);
+  --shadow-md:0 4px 16px rgba(47,66,56,.06),0 1px 3px rgba(47,66,56,.04);
+  --shadow-lg:0 8px 32px rgba(47,66,56,.08),0 2px 8px rgba(47,66,56,.04);
+  --shadow-ambient:0 12px 48px rgba(47,66,56,.10);
+  --shadow-paper-inset:inset 0 1px 2px rgba(47,66,56,.03);  /* 输入框纸感 */
+  --ring-focus:0 0 0 4px rgba(124,152,133,.18);
+  --ring-care:0 0 0 4px rgba(156,79,63,.16);
+  --hairline:rgba(47,66,56,.05);
+  --divider:rgba(47,66,56,.08);
+
+  /* ---------- 动效 ----------
+     禁止：弹跳/弹簧/overshoot、旋转、闪烁脉冲、自动轮播、
+          scale>3%、位移>8px                                */
+  --dur-fast:160ms; --dur-base:240ms; --dur-slow:400ms; --dur-breath:4200ms;
+  --ease-out:cubic-bezier(.22,.61,.36,1);
+  --ease-in-out:cubic-bezier(.45,0,.25,1);
+  --ease-breath:cubic-bezier(.4,0,.6,1);
+
+  /* ---------- 氛围区（时段变量，JS 按小时切换） ---------- */
+  --amb-top:#EAF0EA; --amb-bottom:#F7F5F0; --amb-glow:#F5E7CC;
+  --sil-far:#DDE7DE; --sil-mid:#B8CBBD; --sil-near:#7C9885;
+
+  /* ---------- z-index ---------- */
+  --z-base:0; --z-sticky:10; --z-nav:20; --z-sheet:30;
+  --z-backdrop:40; --z-modal:50; --z-toast:60;
+  --z-crisis:9999;   /* 危机干预层独占最高 */
+}
+
+/* ===== 桌游套件 Board Game Kit v1.0（gstack-designer 2026-08-03） =====
+   设计依据：deliverables/gstack/boardgame-design-spec-2026-08-03.md §3.2
+   仅 2 个原始 rgba 值（--card-edge / --card-back-ink），其余为既有 token 别名。
+   深色一致性由基座 @media dark 段保证（已在其中补 --card-back-* 深色值）。 */
+:root{
+  /* B1 卡牌几何（5:7，贴近扑克 63×88mm 的 1:1.397） */
+  --card-ratio: 5 / 7;
+  --card-w-sm: 96px;    /* 牌堆缩略 / 已收起的牌 */
+  --card-w-md: 132px;   /* 手牌 */
+  --card-w-lg: 232px;   /* 聚焦卡（375 屏内居中） */
+  --r-card: var(--r-sm);/* 桌游实物卡专用=12px；界面 Card 仍是 --r-lg 20px，不可互换 */
+  --card-pad: 16px;
+  --card-bar: 4px;      /* 卡面顶部类型腰封高度 */
+
+  /* B2 卡牌表面（唯一新增原始值在此段） */
+  --card-face: var(--bg-elevated);
+  --card-edge: rgba(47,66,56,.10);        /* 卡缘：比 --hairline 略重，模拟纸边 */
+  --card-back-a: var(--forest-600);       /* 卡背渐变起 */
+  --card-back-b: var(--forest-900);       /* 卡背渐变止 */
+  --card-back-ink: rgba(255,253,250,.10); /* 卡背叶脉纹样墨色 */
+  --shadow-card:      0 2px 8px rgba(47,66,56,.06), 0 8px 32px rgba(47,66,56,.06);
+  --shadow-card-lift: 0 4px 16px rgba(47,66,56,.08), 0 12px 48px rgba(47,66,56,.07);
+
+  /* B3 卡类型：不新增颜色，全部复用已验证 token；差异靠「色+符号+边框形态」三重编码 */
+  --ct-situation: var(--mist-600);
+  --ct-choice:    var(--forest-700);
+  --ct-echo:      var(--wood-700);
+  --ct-keepsake:  var(--wood-700);
+  --ct-blank:     var(--text-tertiary);
+  --ct-situation-bg: var(--mist-100);
+  --ct-choice-bg:    var(--forest-50);
+  --ct-echo-bg:      var(--wood-100);
+
+  /* B4 路径 / 棋盘 */
+  --node-passed:  var(--forest-500);
+  --node-current: var(--forest-700);
+  --node-next:    var(--forest-300);
+  --node-locked:  var(--v-none);
+  --node-mark:    var(--wood-500);
+  --node-d:      10px;   /* 常规节点直径 */
+  --node-d-cur:  16px;   /* 当前节点直径 */
+  --node-d-lock:  6px;   /* 未解锁节点直径（更小=形状编码，不靠颜色） */
+  --track-line: 1.5px;
+  --track-h:     40px;
+  --branch-gap:  20px;
+
+  /* B5 指示物 / 资源 */
+  --pip-d:    10px;
+  --pip-gap:   6px;
+  --pip-on:   var(--wood-500);
+  --pip-off:  var(--forest-300);
+  --pip-track:var(--bg-sunken);
+  --level-h:   6px;
+
+  /* B6 随机器 / 时长 / 缓动（例外 E-1/E-2） */
+  --drop-zone: 88px;
+  --drop-travel: 24px;  /* 落叶位移上限，见例外 E-2 */
+  --dur-flip:  420ms;   /* 翻牌，见例外 E-1 */
+  --dur-deal:  320ms;   /* 发牌入场 */
+  --dur-drop:  480ms;   /* 落叶 */
+  --ease-card: var(--ease-in-out); /* 对称、无 overshoot */
+
+  /* B7 回合 / 阶段 */
+  --phase-h: 28px;
+  --actionbar-pad: 12px;
+}
+
+/* ============================================================
+   动物系陪伴角色 · gstack-designer 2026-08-03
+   动物毛色固定，深色模式不反转（同一只小动物，不是夜里变成另一只）
+   ============================================================ */
+:root{
+  /* C1 三角色调色板（6 个/角色 = 18 个） */
+  --pal-lili-fur:#A87B52;     --pal-lili-fur-deep:#8A5F3A;   --pal-lili-belly:#F2E3CB;
+  --pal-lili-inner:#E7CBA4;   --pal-lili-eye:#3A2C22;        --pal-lili-blush:#E4A98C;
+  --pal-achi-fur:#BC6E3E;     --pal-achi-fur-deep:#9A5430;   --pal-achi-belly:#F6EFE4;
+  --pal-achi-inner:#E9CDB0;   --pal-achi-eye:#3A2C22;        --pal-achi-blush:#E3A17C;
+  --pal-tuan-fur:#A29483;     --pal-tuan-fur-deep:#8C7D6C;   --pal-tuan-belly:#F0E6D8;
+  --pal-tuan-inner:#B7A996;   --pal-tuan-eye:#3A2C22;        --pal-tuan-blush:#E5A98E;
+
+  /* C2 头像尺寸 */
+  --avatar-size-chat:48px;
+  --avatar-size-row:28px;
+  --avatar-size-head:96px;
+  --avatar-r:var(--r-full);
+
+  /* C3 表情包面板与气泡 */
+  --sticker-size:56px;
+  --sticker-size-msg:168px;
+  --sticker-panel-bg:var(--bg-elevated);
+  --sticker-panel-r:var(--r-lg);
+  --sticker-panel-pad:var(--sp-3);
+  --sticker-item-r:var(--r-md);
+  --sticker-item-hover:var(--bg-sunken);
+  --sticker-item-active:var(--forest-100);
+  --sticker-gap:var(--sp-2);
+  --sticker-grid-gap:var(--sp-3);
+  --sticker-icon-btn-size:44px;
+  --emoji-msg-bg:transparent;
+  --emoji-msg-r:var(--r-md);
+}
+
+/* ============================================================
+   深色模式「夜间森林」—— 主场景是深夜，这不是可选项
+   深色下阴影几乎失效，层级改由 --hairline 边框承担
+   ============================================================ */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg-base:#161D19; --bg-elevated:#1E2722; --bg-sunken:#121815; --bg-tint:#232D27;
+
+    --text-primary:#E8EDE7; --text-secondary:#A9B5AC;
+    --text-tertiary:#8B978F; --text-disabled:#6B766F; --text-inverse:#161D19;
+
+    --forest-900:#DCE8DF; --forest-700:#9DBFA6; --forest-600:#B0CDB7;
+    --forest-500:#7C9885;  --forest-300:#4A6B57;
+    --forest-100:#2C3A31;  --forest-50:#232D27;
+
+    --wood-700:#D8AF88; --wood-500:#D0A177; --wood-100:#33271E;
+
+    /* care-700 深色值：初版 #E0907C 偏亮偏粉、读起来像装饰色，丢失分量。
+       改用 #D98C76 降粉调。若仍觉轻，用 1.5px border 补重量，
+       ⚠️ 不要靠提高饱和度解决 —— 会退回"正红"的唤醒问题。       */
+    --care-700:#D98C76; --care-600:#E39C87; --care-100:#3A2723;
+
+    /* Care 按钮文字色反转：白字 on #D98C76 = 2.60:1 ❌ / 深底字 = 6.51:1 ✓ */
+    --care-on:#161D19;
+
+    --hairline:rgba(255,255,255,.06);
+    --divider:rgba(255,255,255,.09);
+
+    --shadow-xs:0 1px 2px rgba(0,0,0,.20);
+    --shadow-sm:0 2px 8px rgba(0,0,0,.28);
+    --shadow-md:0 4px 16px rgba(0,0,0,.32);
+    --shadow-lg:0 8px 32px rgba(0,0,0,.38);
+    --shadow-ambient:0 12px 48px rgba(0,0,0,.45);
+
+    --amb-top:#1E2722; --amb-bottom:#161D19; --amb-glow:#3A4A3E;
+    --sil-far:#222C26; --sil-mid:#1A2320; --sil-near:#0F1613;
+
+    /* 桌游卡背：深色下 forest-600/900 解析为亮绿，会降低分量；补深绿卡背降唤醒 */
+    --card-back-a:#2C3A31; --card-back-b:#161D19;
+  }
+}
+
+/* ============================================================
+   全局基线
+   ============================================================ */
+html{ -webkit-text-size-adjust:100%; }
+
+body{
+  font-family:var(--font-sans);
+  background:var(--bg-base);
+  color:var(--text-primary);
+  line-height:var(--lh-body);
+  letter-spacing:var(--ls-cjk);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* 中文正文最大行宽，防止桌面端撑成一行 */
+.prose{ max-width:34em; }
+
+/* ============================================================
+   减弱动效 —— 必须实现，不是加分项
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:120ms !important;   /* 保留 120ms，完全瞬变会显得断裂 */
+    scroll-behavior:auto !important;
+  }
+  .breathe,.glow,.sway,.caret,.typing i{ animation:none !important; }
+}

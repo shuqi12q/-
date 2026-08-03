@@ -1,0 +1,21 @@
+# ---- 依赖与构建 ----
+/node_modules
+/.next
+/out
+*.tsbuildinfo
+
+# ---- 环境变量（含密钥，绝不推送） ----
+.env
+.env.local
+.env.*.local
+
+# ---- 开发临时产物 ----
+/dev.log
+/_diag.txt
+/_final.txt
+/help.html
+/.devlog*.txt
+
+# ---- 系统 ----
+.DS_Store
+Thumbs.db
