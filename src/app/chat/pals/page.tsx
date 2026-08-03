@@ -78,7 +78,7 @@ export default function ChatPalsPage() {
 
       <div style={{ marginTop: "var(--sp-8)", textAlign: "center" }}>
         <Link
-          href="/chat"
+          href="/chat?p=chichi"
           className="underline"
           style={{ ...t.caption, color: "var(--text-tertiary)", textUnderlineOffset: 3 }}
         >

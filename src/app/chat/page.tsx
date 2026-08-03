@@ -65,11 +65,24 @@ export default function Chat() {
   const bottom = useRef<HTMLDivElement>(null);
   const ready = useRef(false);
 
-  // 进入时恢复上次选的角色；没有则进入选择页
+  // 进入时优先使用 URL ?p= 指定角色（来自 /chat/pals 的选择），
+  // 否则恢复上次选中的角色；都没有则进入选择页。
+  // 修复：此前忽略 ?p=，直接用 localStorage 残留角色，导致从 pals 点角色却落到上一个角色（如点栖栖出团团）。
   useEffect(() => {
-    const saved = window.localStorage.getItem(COMPANION_KEY);
-    if (saved && COMPANIONS.find((c) => c.id === saved)) {
-      setSelectedId(saved);
+    let target: string | null = null;
+    try {
+      const p = new URLSearchParams(window.location.search).get("p");
+      if (p && COMPANIONS.find((c) => c.id === p)) target = p;
+    } catch {
+      /* 解析失败则回退到 localStorage */
+    }
+    if (!target) {
+      const saved = window.localStorage.getItem(COMPANION_KEY);
+      if (saved && COMPANIONS.find((c) => c.id === saved)) target = saved;
+    }
+    if (target) {
+      setSelectedId(target);
+      window.localStorage.setItem(COMPANION_KEY, target);
     }
   }, []);
 
@@ -217,6 +230,14 @@ export default function Chat() {
     setSelectedId(null);
     ready.current = false;
     setMsgs([]);
+    // 清除 URL 上的 ?p=，避免刷新选择页后又被带回到上一个角色
+    try {
+      if (window.location.search) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    } catch {
+      /* 忽略历史操作异常 */
+    }
   };
 
   // ---- 角色选择页 ----
