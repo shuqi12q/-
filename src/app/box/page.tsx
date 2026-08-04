@@ -7,7 +7,8 @@ import { Card, t } from "@/components/ui";
 
 // 7 个小工具（本地、轻量、自我探索）
 const TOOLS = [
-  { href: "/box/dream", name: "梦的解析", desc: "把梦写下来，看看它在说什么", icon: "dream" },
+  { href: "/box/dream", name: "梦的解析", desc: "周公 / 心理学双模式，AI 解读梦境元素", icon: "dream" },
+  { href: "/box/dream/records", name: "梦境卡片", desc: "回看你记录的所有梦境 + DNA 报告", icon: "dream-card" },
   { href: "/box/reframe", name: "转念器", desc: "把烦心事换个角度重新看", icon: "reframe" },
   { href: "/box/coin", name: "决策币", desc: "抛一枚硬币，看清心里的倾向", icon: "coin" },
   { href: "/box/book", name: "答案之书", desc: "默念问题，翻开一页答案", icon: "book" },
@@ -22,6 +23,8 @@ function ToolIcon({ name }: { name: string }) {
   switch (name) {
     case "dream": // 月亮 + 星
       return (<svg {...c} aria-hidden><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" /><path d="M15 4v2M16 8h2" /></svg>);
+    case "dream-card": // 卡片堆
+      return (<svg {...c} aria-hidden><rect x="3" y="6" width="14" height="11" rx="2" /><path d="M7 6V4h12v11" opacity=".5" /></svg>);
     case "reframe": // 环形箭头
       return (<svg {...c} aria-hidden><path d="M20 12a8 8 0 1 1-2.34-5.66" /><path d="M20 4v4h-4" /></svg>);
     case "coin": // 硬币

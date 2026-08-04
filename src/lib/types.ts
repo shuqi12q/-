@@ -23,6 +23,50 @@ export interface JournalEntry {
 
 export type CopingStyle = "avoid" | "please" | "direct" | "seek";
 
+// ---------- 梦境解析 ----------
+// 解析模式：传统文化（周公解梦风格） / 现代心理学（弗洛伊德/荣格取向）
+export type DreamMode = "zhougong" | "psych";
+// 标签分类（噩梦/美梦/日常梦）
+export type DreamType = "nightmare" | "good" | "ordinary";
+
+// 元素地图单条：梦境里的一个元素 + 象征 + 可能情绪
+export interface DreamElement {
+  element: string;  // 元素本身（如「坠落」「水」「亲人」）
+  symbol: string;   // 象征意义
+  emotion: string;  // 可能情绪
+}
+
+// 情绪仪表盘单条：情绪名 + 百分比 + 一句话解释
+export interface DreamEmotion {
+  name: string;      // 情绪词（如「害怕」）
+  percent: number;   // 0-100
+  desc: string;      // 一句话解释
+}
+
+// 一次 AI 解析的完整结果
+export interface DreamAnalysis {
+  mode: DreamMode;
+  elements: DreamElement[];    // 元素地图（建议 3-6 条）
+  emotions: DreamEmotion[];     // 情绪仪表盘（建议 4 条）
+  suggestions: string[];       // 三点建议
+  summary: string;              // 一句话总结（可选）
+}
+
+// 一条梦境记录
+export interface DreamRecord {
+  id: string;
+  createdAt: number;
+  text: string;
+  mode: DreamMode;
+  type?: DreamType;             // 噩梦/美梦/日常
+  clarity?: number;             // 1-10
+  tags: string[];               // 自由标签
+  place?: string;
+  people: string[];
+  analysis: DreamAnalysis;     // 保存时随附 AI 解析
+  favorite?: boolean;
+}
+
 export interface RoleCharacter {
   id: string;
   name: string;
