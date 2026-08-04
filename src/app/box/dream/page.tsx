@@ -187,9 +187,9 @@ export default function DreamInput() {
                   style={{
                     padding: "6px 12px",
                     borderRadius: 999,
-                    border: on ? "1.5px solid var(--forest-500)" : "1px solid var(--hairline)",
-                    background: on ? "var(--forest-100)" : "#FFFFFF",
-                    color: on ? TXT.strong : TXT.mid,
+                    border: on ? "1.5px solid #A8D5BC" : "1px solid var(--hairline)",
+                    background: on ? "#EAF6EF" : "#FFFFFF",
+                    color: on ? "#2A5C44" : TXT.mid,
                     fontSize: "var(--fs-caption)",
                     cursor: "pointer",
                   }}
