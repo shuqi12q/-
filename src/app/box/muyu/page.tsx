@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Shell from "@/components/Shell";
 import PrivacyBadge from "@/components/PrivacyBadge";
+import BoxBack from "@/components/BoxBack";
 import { Btn, Card, t } from "@/components/ui";
 
 // 参考主流「敲木鱼」应用：点击/自动敲击 + 木鱼晃动 + 涟漪光晕 + 「功德+1」飘字 + 功德弹跳动画
@@ -117,6 +118,7 @@ export default function MuyuPage() {
 
   return (
     <Shell>
+      <BoxBack />
       <style>{`
         @keyframes muyu-float-up { 0% { transform: translate(-50%,0) scale(.9); opacity: 0; } 12% { opacity: 1; } 100% { transform: translate(-50%,-76px) scale(1.05); opacity: 0; } }
         @keyframes muyu-ring { 0% { transform: translate(-50%,-50%) scale(.35); opacity: .65; } 100% { transform: translate(-50%,-50%) scale(1.45); opacity: 0; } }

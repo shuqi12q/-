@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Shell from "@/components/Shell";
+import BoxBack from "@/components/BoxBack";
 import PrivacyBadge from "@/components/PrivacyBadge";
 import { Btn, t } from "@/components/ui";
 import type { DreamAnalysis, DreamRecord } from "@/lib/types";
+
+const TXT = { strong: "#2A322C", mid: "#3F4A43", soft: "#4E5A53" };
 
 interface PendingPayload {
   text: string;
@@ -72,7 +75,7 @@ export default function DreamResult() {
     return (
       <Shell>
         <div className="text-center" style={{ padding: "var(--sp-12) 0" }}>
-          <p style={{ ...t.body, color: "var(--text-secondary)" }}>没有待解析的梦境。</p>
+          <p style={{ ...t.body, color: "#3F4A43" }}>没有待解析的梦境。</p>
           <Link href="/box/dream" className="no-underline">
             <Btn size="sm" style={{ marginTop: "var(--sp-3)" }}>去写一个梦 →</Btn>
           </Link>
@@ -89,6 +92,7 @@ export default function DreamResult() {
 
   return (
     <Shell>
+      <BoxBack label="返回输入" to="/box/dream" />
       {/* 顶部模式 + 一句话总结 */}
       <div style={{ background: "#FAF7F2", borderRadius: "var(--r-xl)", padding: "var(--sp-5)", marginBottom: "var(--sp-5)" }}>
         <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: 999, background: "rgba(232,155,108,.15)", color: "#C8742B", fontSize: "var(--fs-caption)", fontWeight: 600 }}>{modeLabel}</span>
@@ -109,7 +113,7 @@ export default function DreamResult() {
                   <span style={{ width: 28, height: 28, borderRadius: 999, background: accent, color: "#FFF", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "var(--fs-caption)", fontWeight: 600 }}>{i + 1}</span>
                   <span style={{ ...t.h3, color: "var(--forest-900)" }}>「{e.element}」</span>
                 </div>
-                <div style={{ ...t.body, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+                <div style={{ ...t.body, color: "#3F4A43", lineHeight: 1.8 }}>
                   <p><b style={{ color: "var(--text-primary)" }}>象征意义：</b>{e.symbol || "潜意识给你的回信。"}</p>
                   <p style={{ marginTop: 6 }}><b style={{ color: "var(--text-primary)" }}>可能情绪：</b>{e.emotion || "待觉察。"}</p>
                 </div>
@@ -127,12 +131,12 @@ export default function DreamResult() {
             <div key={i} style={{ background: "#FFFFFF", borderRadius: "var(--r-lg)", padding: "var(--sp-4)", border: "1px solid var(--hairline)" }}>
               <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
                 <span style={{ ...t.body, color: "var(--forest-900)", fontWeight: 600 }}>{em.name}</span>
-                <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>{em.percent}%</span>
+                <span style={{ ...t.caption, color: "#4E5A53" }}>{em.percent}%</span>
               </div>
               <div style={{ height: 8, borderRadius: 999, background: "var(--bg-tint)", overflow: "hidden", marginBottom: 8 }}>
                 <div style={{ height: "100%", width: `${em.percent}%`, background: gradient(em.name), borderRadius: 999, transition: "width .6s ease" }} />
               </div>
-              <p style={{ ...t.body, color: "var(--text-secondary)", lineHeight: 1.7 }}>{em.desc}</p>
+              <p style={{ ...t.body, color: "#3F4A43", lineHeight: 1.7 }}>{em.desc}</p>
             </div>
           ))}
         </div>
@@ -161,7 +165,7 @@ export default function DreamResult() {
         </Link>
       </div>
 
-      <p className="text-center" style={{ ...t.caption, color: "var(--text-tertiary)", marginTop: "var(--gap-section)" }}>
+      <p className="text-center" style={{ ...t.caption, color: "#4E5A53", marginTop: "var(--gap-section)" }}>
         解梦没有标准答案，写下来本身就是一种看见。
       </p>
       <div className="text-center" style={{ marginTop: "var(--gap-section)" }}>

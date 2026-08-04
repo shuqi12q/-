@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Shell from "@/components/Shell";
 import PrivacyBadge from "@/components/PrivacyBadge";
+import BoxBack from "@/components/BoxBack";
 import { Btn, Card, t } from "@/components/ui";
 
 const CLEAR_KEY = "psy_box_cleared_today";
@@ -41,6 +42,7 @@ export default function ClearPage() {
 
   return (
     <Shell>
+      <BoxBack />
       <h1 style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>烦恼消消</h1>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-6)" }}>
         把堵在心口的烦恼一个个写出来，再一个个消掉——写下来本身，就会轻一点。

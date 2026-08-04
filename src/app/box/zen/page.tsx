@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Shell from "@/components/Shell";
 import PrivacyBadge from "@/components/PrivacyBadge";
+import BoxBack from "@/components/BoxBack";
 import { Btn, Card, t } from "@/components/ui";
 import { ZEN_SESSIONS, ZEN_QUOTES } from "@/lib/box-data";
 
@@ -59,6 +60,7 @@ export default function ZenPage() {
 
   return (
     <Shell>
+      <BoxBack />
       <h1 style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>松弛哲学</h1>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-6)" }}>
         不用追求什么状态，只需要跟着圆一起呼吸。念头来了又走，你只是看着它们。

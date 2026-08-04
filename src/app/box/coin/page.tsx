@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Shell from "@/components/Shell";
 import PrivacyBadge from "@/components/PrivacyBadge";
+import BoxBack from "@/components/BoxBack";
 import { Btn, Card, t } from "@/components/ui";
 
 export default function CoinPage() {
@@ -22,6 +23,7 @@ export default function CoinPage() {
 
   return (
     <Shell>
+      <BoxBack />
       <h1 style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>决策币</h1>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-6)" }}>
         硬币不替你决定，它只帮你把犹豫摊开——真正重要的，是硬币落下前你心里的那点倾向。

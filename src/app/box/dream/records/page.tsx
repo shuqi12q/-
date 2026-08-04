@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Shell from "@/components/Shell";
+import BoxBack from "@/components/BoxBack";
 import PrivacyBadge from "@/components/PrivacyBadge";
 import { Btn, Card, t } from "@/components/ui";
 import type { DreamRecord } from "@/lib/types";
@@ -75,6 +76,7 @@ export default function DreamRecords() {
 
   return (
     <Shell>
+      <BoxBack />
       <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-4)" }}>
         <h1 style={{ ...t.h1, color: "var(--forest-900)" }}>梦境卡片</h1>
         <Link href="/box/dream" className="no-underline">

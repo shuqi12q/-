@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Shell from "@/components/Shell";
 import PrivacyBadge from "@/components/PrivacyBadge";
+import BoxBack from "@/components/BoxBack";
 import { Btn, Card, t } from "@/components/ui";
 import { ANSWERS } from "@/lib/box-data";
 
@@ -27,6 +28,7 @@ export default function BookPage() {
 
   return (
     <Shell>
+      <BoxBack />
       <h1 style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>答案之书</h1>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-6)" }}>
         先在心里默默问一个困扰你的小问题（最好是"是 / 否"类），然后翻开一页。

@@ -3,9 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Shell from "@/components/Shell";
+import BoxBack from "@/components/BoxBack";
 import PrivacyBadge from "@/components/PrivacyBadge";
 import { Btn, Card, t } from "@/components/ui";
 import type { DreamAnalysis, DreamMode } from "@/lib/types";
+
+// 梦的解析专用深色文字（米色/浅色背景上保证可读）
+const TXT = { strong: "#2A322C", mid: "#3F4A43", soft: "#4E5A53" };
 
 const EMOTIONS = ["平静", "好奇", "快乐", "焦虑", "恐惧", "悲伤", "愤怒", "羞愧", "惊讶", "委屈"];
 const TAG_CHIPS = ["学校", "家庭", "旅行", "考试", "海边", "城市", "动物", "森林", "亲人", "朋友", "陌生人", "飞行"];
@@ -15,14 +19,54 @@ export default function DreamInput() {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<DreamMode>("psych");
   const [emotions, setEmotions] = useState<string[]>([]);
+  const [customEmotions, setCustomEmotions] = useState<string[]>([]);
+  const [customTags, setCustomTags] = useState<string[]>([]);
   const [clarity, setClarity] = useState(6);
   const [tags, setTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [streamed, setStreamed] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  // 自定义输入状态
+  const [showEmoInput, setShowEmoInput] = useState(false);
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [emoText, setEmoText] = useState("");
+  const [tagText, setTagText] = useState("");
+  const [emoErr, setEmoErr] = useState("");
+  const [tagErr, setTagErr] = useState("");
+
+  const allEmotions = [...EMOTIONS, ...customEmotions];
+  const allTags = [...TAG_CHIPS, ...customTags];
 
   const toggle = (arr: string[], v: string) =>
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+
+  // 添加自定义标签（情绪 / 场景通用）：空值校验 + 去重（含预设）
+  const addCustom = (kind: "emotion" | "tag") => {
+    const textVal = (kind === "emotion" ? emoText : tagText).trim();
+    const setTextVal = kind === "emotion" ? setEmoText : setTagText;
+    const setErrVal = kind === "emotion" ? setEmoErr : setTagErr;
+    const setCustom = kind === "emotion" ? setCustomEmotions : setCustomTags;
+    const setSel = kind === "emotion" ? setEmotions : setTags;
+    const existing = kind === "emotion" ? allEmotions : allTags;
+    if (!textVal) { setErrVal("不能为空"); return; }
+    if (existing.includes(textVal)) { setErrVal("已存在这个标签"); return; }
+    setCustom((p) => [...p, textVal]);
+    setSel((p) => [...p, textVal]); // 添加后自动选中
+    setTextVal("");
+    setErrVal("");
+    if (kind === "emotion") setShowEmoInput(false); else setShowTagInput(false);
+  };
+
+  // 删除自定义标签（同时取消选中）
+  const removeCustom = (kind: "emotion" | "tag", v: string) => {
+    if (kind === "emotion") {
+      setCustomEmotions((p) => p.filter((x) => x !== v));
+      setEmotions((p) => p.filter((x) => x !== v));
+    } else {
+      setCustomTags((p) => p.filter((x) => x !== v));
+      setTags((p) => p.filter((x) => x !== v));
+    }
+  };
 
   const submit = async () => {
     const v = text.trim();
@@ -47,7 +91,6 @@ export default function DreamInput() {
         setStreamed(acc);
       }
       const analysis = parseAnalysis(acc, mode);
-      // 跳结果页（用 location.href 带 state 不可靠，改用 sessionStorage 暂存）
       try { sessionStorage.setItem("psy_pending_analysis", JSON.stringify({ text: v, mode, emotions, clarity, tags, analysis })); } catch {}
       router.push("/box/dream/result");
     } catch (e) {
@@ -58,8 +101,9 @@ export default function DreamInput() {
 
   return (
     <Shell>
-      <h1 style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--sp-1)" }}>梦的解析</h1>
-      <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-5)" }}>
+      <BoxBack />
+      <h1 style={{ ...t.h1, color: TXT.strong, marginBottom: "var(--sp-1)" }}>梦的解析</h1>
+      <p style={{ ...t.body, color: TXT.mid, marginBottom: "var(--sp-5)" }}>
         把梦写下来，让它映照一下最近的心情。不诊断、不算命，只是一面安静的镜子。
       </p>
 
@@ -83,14 +127,14 @@ export default function DreamInput() {
                 border: "none",
                 cursor: "pointer",
                 background: on ? "#FFFFFF" : "transparent",
-                color: on ? "var(--forest-900)" : "var(--text-secondary)",
+                color: on ? TXT.strong : TXT.mid,
                 fontSize: "var(--fs-caption)",
                 boxShadow: on ? "0 2px 8px rgba(0,0,0,.06)" : "none",
                 transition: "all var(--dur-fast)",
               }}
             >
               <div style={{ fontWeight: 600 }}>{label}</div>
-              <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{sub}</div>
+              <div style={{ fontSize: 11, opacity: .92, marginTop: 2 }}>{sub}</div>
             </button>
           );
         })}
@@ -98,9 +142,9 @@ export default function DreamInput() {
 
       {/* 文本输入 */}
       <Card style={{ marginTop: "var(--sp-5)", background: "#FFFFFF" }}>
-        <div className="flex items-center" style={{ gap: 6, color: "var(--text-tertiary)", marginBottom: "var(--sp-2)" }}>
+        <div className="flex items-center" style={{ gap: 6, color: TXT.soft, marginBottom: "var(--sp-2)" }}>
           <span style={{ width: 4, height: 4, borderRadius: 999, background: "var(--care-500)" }} />
-          <span style={{ ...t.caption }}>把梦写下来（越具体越好）</span>
+          <span style={{ ...t.caption, color: TXT.soft }}>把梦写下来（越具体越好）</span>
         </div>
         <textarea
           value={text}
@@ -116,50 +160,87 @@ export default function DreamInput() {
             padding: "var(--sp-4)",
             fontSize: "var(--fs-body-lg)",
             lineHeight: 1.9,
-            color: "var(--text-primary)",
+            color: TXT.strong,
             resize: "none",
             outline: "none",
           }}
         />
-        <div className="text-right" style={{ ...t.caption, color: "var(--text-tertiary)", marginTop: 4 }}>
+        <div className="text-right" style={{ ...t.caption, color: TXT.soft, marginTop: 4 }}>
           {text.length} / 1500
         </div>
       </Card>
 
-      {/* 情绪基词（标记最近的情绪） */}
+      {/* 梦伴随的情绪（预设 + 自定义） */}
       <div style={{ marginTop: "var(--sp-5)" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-2)" }}>
-          <span style={{ ...t.body, color: "var(--text-secondary)" }}>梦里伴随的情绪（可多选）</span>
-          <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>{emotions.length} / 10</span>
+          <span style={{ ...t.body, color: TXT.mid }}>梦里伴随的情绪（可多选）</span>
+          <span style={{ ...t.caption, color: TXT.soft }}>{emotions.length} / 10+</span>
         </div>
         <div className="flex flex-wrap" style={{ gap: 8 }}>
-          {EMOTIONS.map((emo) => {
+          {allEmotions.map((emo) => {
             const on = emotions.includes(emo);
+            const custom = customEmotions.includes(emo);
             return (
-              <button
-                key={emo}
-                onClick={() => setEmotions((p) => toggle(p, emo))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: 999,
-                  border: on ? "1.5px solid var(--forest-500)" : "1px solid var(--hairline)",
-                  background: on ? "var(--forest-100)" : "#FFFFFF",
-                  color: on ? "var(--forest-900)" : "var(--text-secondary)",
-                  fontSize: "var(--fs-caption)",
-                  cursor: "pointer",
-                }}
-              >
-                {emo}
-              </button>
+              <span key={emo} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                <button
+                  onClick={() => setEmotions((p) => toggle(p, emo))}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 999,
+                    border: on ? "1.5px solid var(--forest-500)" : "1px solid var(--hairline)",
+                    background: on ? "var(--forest-100)" : "#FFFFFF",
+                    color: on ? TXT.strong : TXT.mid,
+                    fontSize: "var(--fs-caption)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {emo}
+                </button>
+                {custom && (
+                  <button
+                    onClick={() => removeCustom("emotion", emo)}
+                    aria-label={`删除情绪 ${emo}`}
+                    title="删除这个自定义情绪"
+                    style={{ padding: "2px 4px", color: "var(--care-600)", fontSize: 12, cursor: "pointer", background: "none", border: "none" }}
+                  >×</button>
+                )}
+              </span>
             );
           })}
         </div>
+        {showEmoInput ? (
+          <div className="flex items-center" style={{ gap: 8, marginTop: 10 }}>
+            <input
+              autoFocus
+              value={emoText}
+              onChange={(e) => { setEmoText(e.target.value); setEmoErr(""); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom("emotion"); } }}
+              placeholder="输入一个情绪词…"
+              maxLength={8}
+              style={{
+                flex: 1, height: 34, padding: "0 12px", borderRadius: "var(--r-sm)",
+                border: "1px solid var(--forest-300)", background: "#FFFFFF",
+                color: TXT.strong, fontSize: "var(--fs-caption)", outline: "none",
+              }}
+            />
+            <Btn variant="secondary" size="sm" onClick={() => addCustom("emotion")}>添加</Btn>
+            <Btn variant="ghost" size="sm" onClick={() => { setShowEmoInput(false); setEmoText(""); setEmoErr(""); }}>取消</Btn>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowEmoInput(true)}
+            style={{ marginTop: 10, color: "var(--forest-700)", fontSize: "var(--fs-caption)", cursor: "pointer", background: "none", border: "none", padding: 0 }}
+          >
+            ＋ 自定义添加
+          </button>
+        )}
+        {emoErr && <p style={{ ...t.caption, color: "var(--care-600)", marginTop: 6 }}>{emoErr}</p>}
       </div>
 
       {/* 清晰度 */}
       <div style={{ marginTop: "var(--sp-5)" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-2)" }}>
-          <span style={{ ...t.body, color: "var(--text-secondary)" }}>梦境清晰度</span>
+          <span style={{ ...t.body, color: TXT.mid }}>梦境清晰度</span>
           <span style={{ ...t.caption, color: "var(--care-600)", fontWeight: 600 }}>{clarity} / 10</span>
         </div>
         <input
@@ -170,46 +251,79 @@ export default function DreamInput() {
           onChange={(e) => setClarity(Number(e.target.value))}
           className="w-full"
           style={{
-            accentColor: "transparent",
-            height: 8,
-            borderRadius: 999,
+            height: 8, borderRadius: 999,
             background: "linear-gradient(90deg, #E8D9FF 0%, #FFE5B4 50%, #B7E4C7 100%)",
             appearance: "none",
           }}
         />
-        <div className="flex justify-between" style={{ ...t.caption, color: "var(--text-tertiary)", marginTop: 4 }}>
+        <div className="flex justify-between" style={{ ...t.caption, color: TXT.soft, marginTop: 4 }}>
           <span>模糊</span><span>很清晰</span>
         </div>
       </div>
 
-      {/* 标签 */}
+      {/* 场景 / 标签（预设 + 自定义） */}
       <div style={{ marginTop: "var(--sp-5)" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-2)" }}>
-          <span style={{ ...t.body, color: "var(--text-secondary)" }}>场景 / 标签</span>
-          <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>{tags.length}</span>
+          <span style={{ ...t.body, color: TXT.mid }}>场景 / 标签</span>
+          <span style={{ ...t.caption, color: TXT.soft }}>{tags.length}</span>
         </div>
         <div className="flex flex-wrap" style={{ gap: 8 }}>
-          {TAG_CHIPS.map((tag) => {
+          {allTags.map((tag) => {
             const on = tags.includes(tag);
+            const custom = customTags.includes(tag);
             return (
-              <button
-                key={tag}
-                onClick={() => setTags((p) => toggle(p, tag))}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: 999,
-                  border: on ? "1.5px solid #B5A8FF" : "1px solid var(--hairline)",
-                  background: on ? "#F0EBFF" : "#FFFFFF",
-                  color: on ? "#5B49D9" : "var(--text-secondary)",
-                  fontSize: "var(--fs-caption)",
-                  cursor: "pointer",
-                }}
-              >
-                {tag}
-              </button>
+              <span key={tag} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                <button
+                  onClick={() => setTags((p) => toggle(p, tag))}
+                  style={{
+                    padding: "6px 12px", borderRadius: 999,
+                    border: on ? "1.5px solid #B5A8FF" : "1px solid var(--hairline)",
+                    background: on ? "#F0EBFF" : "#FFFFFF",
+                    color: on ? "#5B49D9" : TXT.mid,
+                    fontSize: "var(--fs-caption)", cursor: "pointer",
+                  }}
+                >
+                  {tag}
+                </button>
+                {custom && (
+                  <button
+                    onClick={() => removeCustom("tag", tag)}
+                    aria-label={`删除标签 ${tag}`}
+                    title="删除这个自定义标签"
+                    style={{ padding: "2px 4px", color: "var(--care-600)", fontSize: 12, cursor: "pointer", background: "none", border: "none" }}
+                  >×</button>
+                )}
+              </span>
             );
           })}
         </div>
+        {showTagInput ? (
+          <div className="flex items-center" style={{ gap: 8, marginTop: 10 }}>
+            <input
+              autoFocus
+              value={tagText}
+              onChange={(e) => { setTagText(e.target.value); setTagErr(""); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom("tag"); } }}
+              placeholder="输入一个标签…"
+              maxLength={10}
+              style={{
+                flex: 1, height: 34, padding: "0 12px", borderRadius: "var(--r-sm)",
+                border: "1px solid var(--forest-300)", background: "#FFFFFF",
+                color: TXT.strong, fontSize: "var(--fs-caption)", outline: "none",
+              }}
+            />
+            <Btn variant="secondary" size="sm" onClick={() => addCustom("tag")}>添加</Btn>
+            <Btn variant="ghost" size="sm" onClick={() => { setShowTagInput(false); setTagText(""); setTagErr(""); }}>取消</Btn>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowTagInput(true)}
+            style={{ marginTop: 10, color: "var(--forest-700)", fontSize: "var(--fs-caption)", cursor: "pointer", background: "none", border: "none", padding: 0 }}
+          >
+            ＋ 自定义添加
+          </button>
+        )}
+        {tagErr && <p style={{ ...t.caption, color: "var(--care-600)", marginTop: 6 }}>{tagErr}</p>}
       </div>
 
       {/* 提交 */}
@@ -221,26 +335,17 @@ export default function DreamInput() {
           <pre
             className="fade-up"
             style={{
-              marginTop: "var(--sp-3)",
-              padding: "var(--sp-3)",
-              background: "#FFFFFF",
-              border: "1px solid var(--hairline)",
-              borderRadius: "var(--r-md)",
-              fontSize: "var(--fs-caption)",
-              color: "var(--text-secondary)",
-              whiteSpace: "pre-wrap",
-              fontFamily: "inherit",
-              maxHeight: 200,
-              overflow: "auto",
+              marginTop: "var(--sp-3)", padding: "var(--sp-3)",
+              background: "#FFFFFF", border: "1px solid var(--hairline)", borderRadius: "var(--r-md)",
+              fontSize: "var(--fs-caption)", color: TXT.mid, whiteSpace: "pre-wrap", fontFamily: "inherit",
+              maxHeight: 200, overflow: "auto",
             }}
           >{streamed}</pre>
         )}
-        {err && (
-          <p className="text-center fade-up" style={{ ...t.caption, color: "var(--care-600)", marginTop: "var(--sp-2)" }}>{err}</p>
-        )}
+        {err && <p className="text-center fade-up" style={{ ...t.caption, color: "var(--care-600)", marginTop: "var(--sp-2)" }}>{err}</p>}
       </div>
 
-      <p className="text-center" style={{ ...t.caption, color: "var(--text-tertiary)", marginTop: "var(--gap-section)" }}>
+      <p className="text-center" style={{ ...t.caption, color: TXT.soft, marginTop: "var(--gap-section)" }}>
         解析结果会保存在本机，所有内容只有你能看见。
       </p>
       <div className="text-center" style={{ marginTop: "var(--gap-section)" }}>
@@ -251,15 +356,12 @@ export default function DreamInput() {
 }
 
 // ---------- 解析 AI 返回的纯文本 ----------
-// 周公模式 11 行（1 总结 + 3 元素 + 4 情绪 + 3 建议）
-// 心理学模式 13 行（1 洞察 + 5 元素 + 4 情绪 + 3 建议）
 function parseAnalysis(raw: string, mode: DreamMode): DreamAnalysis {
   const lines = raw.split(/\n+/).map((l) => l.replace(/^[\s\d\.、\)\(\【\】•\-:：]+/, "").trim()).filter(Boolean);
   const expectElements = mode === "psych" ? 5 : 3;
   const expectEmotions = 4;
   const expectSuggestions = 3;
 
-  // 元素行：line 用 "=" 切，三段 (element|symbol|emotion)
   const elementLines = lines.filter((l) => l.includes("=") && !/^\d/.test(l)).slice(0, expectElements + 4);
   const elements: DreamAnalysis["elements"] = [];
   for (const l of elementLines) {
@@ -268,7 +370,6 @@ function parseAnalysis(raw: string, mode: DreamMode): DreamAnalysis {
       const element = parts[0];
       const symbol = parts[1] ?? "";
       const emotion = parts.slice(2).join("=") || symbol;
-      // 过滤掉明显是情绪行的（百分比）
       if (!/[%]/.test(element) && element.length <= 12 && !/^\d+$/.test(element)) {
         elements.push({ element, symbol, emotion });
       }
@@ -276,7 +377,6 @@ function parseAnalysis(raw: string, mode: DreamMode): DreamAnalysis {
     if (elements.length >= expectElements) break;
   }
 
-  // 情绪行：包含 % 或匹配 name=num=desc
   const emotionLines = lines.filter((l) => /%|\d{2,3}/.test(l) && l.includes("=")).slice(0, expectEmotions + 4);
   const emotions: DreamAnalysis["emotions"] = [];
   for (const l of emotionLines) {
@@ -300,7 +400,6 @@ function parseAnalysis(raw: string, mode: DreamMode): DreamAnalysis {
     );
   }
 
-  // 建议行：剩下的、不含= 的短句
   const used = new Set<string>();
   [...elementLines, ...emotionLines].forEach((l) => used.add(l));
   const suggestionLines = lines.filter((l) => !used.has(l) && !/^[\d%=\.\s]+$/.test(l) && l.length >= 4 && l.length <= 40).slice(0, expectSuggestions + 4);
@@ -309,7 +408,6 @@ function parseAnalysis(raw: string, mode: DreamMode): DreamAnalysis {
     if (suggestions.length >= expectSuggestions) break;
     if (l.length >= 6 && l.length <= 36) suggestions.push(l);
   }
-  // 兜底建议
   while (suggestions.length < expectSuggestions) {
     suggestions.push(["试着给梦里的情绪取个名字，写下来。", "把这个梦讲给信任的人听，让它被回应。", "白天给自己 5 分钟静默，给潜意识的回响留时间。"][suggestions.length]);
   }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import Shell from "@/components/Shell";
 import PrivacyBadge from "@/components/PrivacyBadge";
+import BoxBack from "@/components/BoxBack";
 import { Btn, Card, t } from "@/components/ui";
 import { FIRST_AID_PLANS, type FirstAidPlan } from "@/lib/box-data";
 
@@ -12,6 +13,7 @@ export default function FirstAidPage() {
 
   return (
     <Shell>
+      <BoxBack />
       <h1 style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>情绪急救</h1>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-6)" }}>
         情绪受伤和身体受伤一样，需要先处理再恢复。选一个你现在最像的状态，跟着步骤走。

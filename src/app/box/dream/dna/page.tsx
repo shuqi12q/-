@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Shell from "@/components/Shell";
+import BoxBack from "@/components/BoxBack";
 import PrivacyBadge from "@/components/PrivacyBadge";
 import { Card, t } from "@/components/ui";
 import type { DreamRecord } from "@/lib/types";
@@ -81,10 +82,11 @@ export default function DreamDNA() {
 
   return (
     <Shell>
+      <BoxBack />
       <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-2)" }}>
         <h1 style={{ ...t.h1, color: "var(--forest-900)" }}>梦境 DNA</h1>
         <Link href="/box/dream/records" className="no-underline" style={{ ...t.body, color: "var(--forest-700)" }}>
-          ← 梦境卡片
+          梦境卡片 →
         </Link>
       </div>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-5)" }}>

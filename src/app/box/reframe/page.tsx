@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Shell from "@/components/Shell";
 import PrivacyBadge from "@/components/PrivacyBadge";
+import BoxBack from "@/components/BoxBack";
 import { Btn, Card, t } from "@/components/ui";
 
 // 一念之转 4 问（Byron Katie《一念之转》+ CBT 认知重评）
@@ -143,6 +144,7 @@ export default function ReframePage() {
 
   return (
     <Shell>
+      <BoxBack />
       <h1 style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>转念器</h1>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-6)" }}>
         把一个让你不舒服的念头拿来，先用 4 问梳理一遍，再让 AI 帮你翻出 6 种"另一种可能"。
