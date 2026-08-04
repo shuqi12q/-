@@ -18,6 +18,7 @@ import {
   speak,
   speakCancel,
 } from "@/lib/mind-audio";
+import { VoiceDialog } from "@/lib/voice-dialog";
 import { MIND_AUDIO_LABEL, type MindAudioKey, type MindSessionRecord } from "@/lib/types";
 
 const AUDIO_OPTIONS: MindAudioKey[] = [
@@ -51,6 +52,13 @@ export default function PracticePage() {
   const [moodEmoji, setMoodEmoji] = useState<string>("");
   const [moodText, setMoodText] = useState("");
   const [note, setNote] = useState("");
+
+  // 语音陪伴
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("");
+  const [voiceAsr, setVoiceAsr] = useState("");
+  const [voiceReply, setVoiceReply] = useState("");
+  const voiceRef = useRef<VoiceDialog | null>(null);
 
   const startedAt = useRef<number>(0);
   const lastPhase = useRef<"inhale" | "hold" | "exhale" | "holdAfter" | "">("");
@@ -135,11 +143,54 @@ export default function PracticePage() {
   const finish = (done: boolean) => {
     audio.stop();
     speakCancel();
+    if (voiceRef.current) {
+      voiceRef.current.close();
+      voiceRef.current = null;
+      setVoiceOn(false);
+    }
     if (done) setPhase("done");
     else {
       setPhase("greeting");
       setElapsed(0);
     }
+  };
+
+  // 语音陪伴开关
+  const toggleVoice = () => {
+    if (voiceOn) {
+      if (voiceRef.current) {
+        voiceRef.current.close();
+        voiceRef.current = null;
+      }
+      setVoiceOn(false);
+      return;
+    }
+    if (!practice) return;
+    const v = new VoiceDialog({
+      onStatus: (s) => {
+        const map: Record<string, string> = {
+          connecting: "正在连接…",
+          ready: "说点什么，我在听",
+          listening: "正在听…",
+          speaking: "正在说话…",
+          error: "连接失败",
+        };
+        setVoiceStatus(map[s] ?? s);
+      },
+      onAsrText: (t, interim) => setVoiceAsr(t),
+      onReplyText: (t) => setVoiceReply(t),
+      onError: (m) => setVoiceStatus("⚠️ " + m),
+      onSessionStarted: () => setVoiceStatus("说点什么，我在听"),
+    });
+    voiceRef.current = v;
+    setVoiceOn(true);
+    setVoiceAsr("");
+    setVoiceReply("");
+    setVoiceStatus("正在连接…");
+    v.connect(
+      `你是正念陪伴，此刻用户正在做「${practice.name}」呼吸练习。你要用温柔、简短、舒缓的话语陪伴他，可以鼓励呼吸节奏、安抚情绪，但不要长篇大论。`,
+      "轻声、舒缓、温暖、简短",
+    );
   };
 
   // 自动结束：满 30 分钟（最长）就停
@@ -420,6 +471,90 @@ export default function PracticePage() {
                 {MIND_AUDIO_LABEL[k]}
               </button>
             ))}
+          </div>
+
+          {/* 语音陪伴 */}
+          <div style={{ width: "100%", maxWidth: 360, margin: "16px auto 0" }}>
+            <button
+              onClick={toggleVoice}
+              style={{
+                width: "100%",
+                padding: "12px 18px",
+                borderRadius: 999,
+                background: voiceOn
+                  ? "rgba(255,255,255,0.92)"
+                  : "transparent",
+                color: voiceOn ? "#22366E" : fgDim,
+                border: voiceOn ? "none" : `1px dashed ${fgDim}`,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {voiceOn ? "🎙 语音陪伴已开启（点击关闭）" : "🎙 语音陪伴（一边呼吸一边聊）"}
+            </button>
+            {voiceOn && (
+              <div
+                className="fade-up"
+                style={{
+                  marginTop: 10,
+                  borderRadius: "var(--r-lg)",
+                  padding: "12px 14px",
+                  background: isDark
+                    ? "rgba(255,255,255,0.10)"
+                    : "rgba(255,255,255,0.85)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: fgDim,
+                    marginBottom: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 999,
+                      background:
+                        voiceStatus === "正在听…"
+                          ? "#E0543F"
+                          : voiceStatus === "正在说话…"
+                            ? "#4A9D6E"
+                            : fgDim,
+                      animation:
+                        voiceStatus === "正在听…" ? "pulse 1s infinite" : "none",
+                    }}
+                  />
+                  {voiceStatus}
+                </div>
+                {voiceAsr && (
+                  <p style={{ fontSize: 13, color: fg, margin: "4px 0", lineHeight: 1.5 }}>
+                    🗣 {voiceAsr}
+                  </p>
+                )}
+                {voiceReply && (
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: isDark ? "#FFE9C9" : "#7A5F1E",
+                      margin: "4px 0",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    💬 {voiceReply}
+                  </p>
+                )}
+                <p style={{ fontSize: 11, color: fgDim, marginTop: 6, lineHeight: 1.6 }}>
+                  说话它就会回应你，说完自动停止收音；需要先启动 voice-proxy
+                  服务（node voice-proxy/server.mjs）。
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 结束按钮 */}
