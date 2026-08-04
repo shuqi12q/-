@@ -103,7 +103,7 @@ export default function DreamInput() {
     <Shell>
       <BoxBack />
       <h1 style={{ ...t.h1, color: TXT.strong, marginBottom: "var(--sp-1)" }}>梦的解析</h1>
-      <p style={{ ...t.body, color: TXT.mid, marginBottom: "var(--sp-5)" }}>
+      <p style={{ ...t.body, color: "#FFFFFF", marginBottom: "var(--sp-5)" }}>
         把梦写下来，让它映照一下最近的心情。不诊断、不算命，只是一面安静的镜子。
       </p>
 
