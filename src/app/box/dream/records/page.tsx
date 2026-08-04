@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Shell from "@/components/Shell";
 import BoxBack from "@/components/BoxBack";
 import PrivacyBadge from "@/components/PrivacyBadge";
-import { Btn, Card, t } from "@/components/ui";
+import { Btn, t } from "@/components/ui";
 import type { DreamRecord } from "@/lib/types";
 
 const FILTERS = [
@@ -21,7 +21,29 @@ const TYPE_COLOR: Record<string, { bg: string; fg: string }> = {
   ordinary: { bg: "#E8F4FF", fg: "#5B8FE3" },
 };
 
+const EMOTION_GRADIENTS: Record<string, string> = {
+  害怕: "linear-gradient(90deg, #87E3D0, #87C5E3)",
+  焦虑: "linear-gradient(90deg, #FFD8B5, #FFB5A8)",
+  紧张: "linear-gradient(90deg, #D8B5FF, #FFB5D8)",
+  委屈: "linear-gradient(90deg, #B7E4C7, #87E3D0)",
+  悲伤: "linear-gradient(90deg, #A8C5FF, #87C5E3)",
+  愤怒: "linear-gradient(90deg, #FFA8A8, #FF7878)",
+  期待: "linear-gradient(90deg, #FFE5B4, #FFD87A)",
+  平静: "linear-gradient(90deg, #C5E3C5, #87E3C5)",
+  快乐: "linear-gradient(90deg, #FFE5B4, #FFD87A)",
+  好奇: "linear-gradient(90deg, #D8B5FF, #B5A8FF)",
+  惊吓: "linear-gradient(90deg, #A8C5FF, #FFA8A8)",
+  释然: "linear-gradient(90deg, #B7E4C7, #A8E3B5)",
+};
+function gradient(name: string) {
+  return EMOTION_GRADIENTS[name] ?? "linear-gradient(90deg, #87E3D0, #B5A8FF)";
+}
+
 function fmt(ts: number) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function fmtShort(ts: number) {
   const d = new Date(ts);
   return `${d.getMonth() + 1}.${d.getDate()} · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
@@ -34,12 +56,16 @@ function inferType(text: string, tags: string[]): keyof typeof TYPE_COLOR {
   if (pos.test(t)) return "good";
   return "ordinary";
 }
+function typeLabel(t: string) {
+  return t === "nightmare" ? "噩梦" : t === "good" ? "美梦" : "日常梦";
+}
 
 export default function DreamRecords() {
   const [records, setRecords] = useState<DreamRecord[]>([]);
   const [filter, setFilter] = useState<typeof FILTERS[number]["key"]>("all");
   const [keyword, setKeyword] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null); // 详情弹层
 
   const load = async () => {
     const { getDreams } = await import("@/lib/db");
@@ -72,7 +98,10 @@ export default function DreamRecords() {
     const { deleteDream } = await import("@/lib/db");
     await deleteDream(id);
     setRecords((p) => p.filter((r) => r.id !== id));
+    if (openId === id) setOpenId(null);
   };
+
+  const open = records.find((r) => r.id === openId) ?? null;
 
   return (
     <Shell>
@@ -84,7 +113,7 @@ export default function DreamRecords() {
         </Link>
       </div>
       <p style={{ ...t.body, color: "var(--text-secondary)", marginBottom: "var(--sp-4)" }}>
-        你的心灵旅程记录 · 共 <b>{records.length}</b> 条
+        你的心灵旅程记录 · 共 <b>{records.length}</b> 条 · 点卡片看完整梦境
       </p>
 
       {/* 搜索 + 筛选 */}
@@ -156,29 +185,31 @@ export default function DreamRecords() {
           {filtered.map((r) => {
             const dreamType = r.type ?? inferType(r.text, r.tags);
             const tone = TYPE_COLOR[dreamType] ?? TYPE_COLOR.ordinary;
-            const summary = (r.analysis.summary || r.text.slice(0, 50) + (r.text.length > 50 ? "…" : ""));
+            const preview = r.text.length > 66 ? r.text.slice(0, 66) + "…" : r.text;
             const modeLabel = r.mode === "zhougong" ? "周公解梦" : "AI";
             return (
-              <div
+              <button
                 key={r.id}
-                className="fade-up flex flex-col"
+                onClick={() => setOpenId(r.id)}
+                className="fade-up flex flex-col text-left no-underline"
                 style={{
                   background: "#FFFFFF",
                   borderRadius: "var(--r-lg)",
                   padding: "var(--sp-4)",
                   boxShadow: "0 1px 4px rgba(0,0,0,.04)",
                   border: "1px solid var(--hairline)",
+                  cursor: "pointer",
+                  color: "inherit",
+                  fontFamily: "inherit",
                 }}
               >
                 <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                  <span style={{ padding: "3px 10px", borderRadius: 999, background: tone.bg, color: tone.fg, fontSize: "var(--fs-caption)", fontWeight: 600 }}>{dreamType === "nightmare" ? "噩梦" : dreamType === "good" ? "美梦" : "日常梦"}</span>
-                  <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>{fmt(r.createdAt)}</span>
+                  <span style={{ padding: "3px 10px", borderRadius: 999, background: tone.bg, color: tone.fg, fontSize: "var(--fs-caption)", fontWeight: 600 }}>{typeLabel(dreamType)}</span>
+                  <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>{fmtShort(r.createdAt)}</span>
                 </div>
-                <p style={{ ...t.body, color: "var(--text-primary)", fontWeight: 600, marginBottom: 6 }}>
-                  「{r.analysis.elements[0]?.element ?? "梦"}」
-                </p>
-                <p style={{ ...t.body, color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: 10 }}>
-                  {summary}
+                {/* 用户写的梦境原文 */}
+                <p style={{ ...t.body, color: "var(--text-primary)", lineHeight: 1.8, marginBottom: 10, fontWeight: 500 }}>
+                  {preview}
                 </p>
                 {r.tags.length > 0 && (
                   <div className="flex flex-wrap" style={{ gap: 4, marginBottom: 8 }}>
@@ -190,14 +221,10 @@ export default function DreamRecords() {
                 <div className="flex items-center justify-between" style={{ marginTop: "auto" }}>
                   <span style={{ display: "inline-flex", gap: 4, alignItems: "center", ...t.caption, color: "var(--text-tertiary)" }}>
                     <span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--care-500)" }} />
-                    {modeLabel}
+                    {modeLabel} · 点击查看全文
                   </span>
-                  <button
-                    onClick={() => { if (confirm("删掉这条梦境？")) remove(r.id); }}
-                    style={{ ...t.caption, color: "var(--text-tertiary)" }}
-                  >删除</button>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -206,6 +233,123 @@ export default function DreamRecords() {
       <div className="text-center" style={{ marginTop: "var(--gap-section)" }}>
         <PrivacyBadge />
       </div>
+
+      {/* 梦境详情弹层 */}
+      {open && (
+        <div
+          className="fixed inset-0 flex items-end justify-center"
+          style={{ zIndex: "var(--z-sheet)", background: "var(--bg-scrim)" }}
+          onClick={() => setOpenId(null)}
+        >
+          <div
+            className="w-full overflow-y-auto fade-up"
+            style={{ maxWidth: 520, maxHeight: "88vh", background: "#FAF7F2", borderRadius: "var(--r-xl) var(--r-xl) 0 0", padding: "var(--sp-6) var(--gap-page-x)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto" style={{ width: 40, height: 4, borderRadius: 999, background: "var(--forest-300)" }} />
+
+            {/* 头部：日期 + 徽章 + 模式 */}
+            <div className="flex items-center justify-between" style={{ marginTop: "var(--sp-4)" }}>
+              <div className="flex items-center" style={{ gap: 8 }}>
+                <span style={{ padding: "3px 10px", borderRadius: 999, background: TYPE_COLOR[open.type ?? inferType(open.text, open.tags)]?.bg ?? "#E8F4FF", color: TYPE_COLOR[open.type ?? inferType(open.text, open.tags)]?.fg ?? "#5B8FE3", fontSize: "var(--fs-caption)", fontWeight: 600 }}>
+                  {typeLabel(open.type ?? inferType(open.text, open.tags))}
+                </span>
+                <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>{fmt(open.createdAt)}</span>
+              </div>
+              <span style={{ display: "inline-flex", gap: 4, alignItems: "center", ...t.caption, color: "var(--text-tertiary)" }}>
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--care-500)" }} />
+                {open.mode === "zhougong" ? "周公解梦" : "现代心理学"} {open.clarity ? `· 清晰度 ${open.clarity}/10` : ""}
+              </span>
+            </div>
+
+            {/* 你的梦境（原文） */}
+            <div style={{ marginTop: "var(--sp-5)" }}>
+              <h3 style={{ ...t.h3, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>你的梦境</h3>
+              <div style={{ background: "#FFFFFF", borderRadius: "var(--r-lg)", padding: "var(--sp-4)", border: "1px solid var(--hairline)" }}>
+                <p className="content-serif" style={{ ...t.bodyLg, color: "#2A322C", lineHeight: 2 }}>{open.text}</p>
+              </div>
+            </div>
+
+            {/* 解析摘要 */}
+            {open.analysis.summary && (
+              <div style={{ marginTop: "var(--sp-4)" }}>
+                <div style={{ background: "#FFF6E8", borderRadius: "var(--r-lg)", padding: "var(--sp-4)" }}>
+                  <p className="content-serif" style={{ ...t.bodyLg, color: "#4A3B2A", lineHeight: 1.8 }}>「{open.analysis.summary}」</p>
+                </div>
+              </div>
+            )}
+
+            {/* 元素地图 */}
+            {open.analysis.elements.length > 0 && (
+              <div style={{ marginTop: "var(--sp-5)" }}>
+                <h3 style={{ ...t.h3, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>元素地图</h3>
+                <div className="flex flex-col" style={{ gap: 8 }}>
+                  {open.analysis.elements.map((e, i) => (
+                    <div key={i} style={{ background: "#FFFFFF", borderRadius: "var(--r-md)", padding: "10px 14px", border: "1px solid var(--hairline)" }}>
+                      <div className="flex items-center" style={{ gap: 8 }}>
+                        <span style={{ width: 22, height: 22, borderRadius: 999, background: ["#E89B6C", "#8B7AE8", "#5BA5E8", "#5BAA68", "#D8755B"][i % 5], color: "#FFF", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{i + 1}</span>
+                        <span style={{ ...t.body, color: "#2A322C", fontWeight: 600 }}>「{e.element}」</span>
+                      </div>
+                      <p style={{ ...t.body, color: "#3F4A43", marginTop: 6, lineHeight: 1.7 }}>
+                        <b style={{ color: "#2A322C" }}>象征：</b>{e.symbol}　<b style={{ color: "#2A322C" }}>情绪：</b>{e.emotion}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 情绪仪表盘 */}
+            {open.analysis.emotions.length > 0 && (
+              <div style={{ marginTop: "var(--sp-5)" }}>
+                <h3 style={{ ...t.h3, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>情绪仪表盘</h3>
+                <div className="flex flex-col" style={{ gap: 10 }}>
+                  {open.analysis.emotions.map((em, i) => (
+                    <div key={i} style={{ background: "#FFFFFF", borderRadius: "var(--r-md)", padding: "10px 14px", border: "1px solid var(--hairline)" }}>
+                      <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
+                        <span style={{ ...t.body, color: "#2A322C", fontWeight: 600 }}>{em.name}</span>
+                        <span style={{ ...t.caption, color: "#4E5A53" }}>{em.percent}%</span>
+                      </div>
+                      <div style={{ height: 6, borderRadius: 999, background: "var(--bg-tint)", overflow: "hidden", marginBottom: 6 }}>
+                        <div style={{ height: "100%", width: `${em.percent}%`, background: gradient(em.name), borderRadius: 999 }} />
+                      </div>
+                      <p style={{ ...t.body, color: "#3F4A43", lineHeight: 1.6 }}>{em.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 建议 */}
+            {open.analysis.suggestions.length > 0 && (
+              <div style={{ marginTop: "var(--sp-5)" }}>
+                <h3 style={{ ...t.h3, color: "var(--forest-900)", marginBottom: "var(--sp-2)" }}>接下来，你可以</h3>
+                <div className="flex flex-col" style={{ gap: 8 }}>
+                  {open.analysis.suggestions.map((s, i) => (
+                    <div key={i} className="flex items-start" style={{ gap: 10, background: "#FFFFFF", borderRadius: "var(--r-md)", padding: "10px 14px", border: "1px solid var(--hairline)" }}>
+                      <span style={{ width: 22, height: 22, borderRadius: 999, background: "#E89B6C", color: "#FFF", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, flexShrink: 0, marginTop: 2 }}>{String(i + 1).padStart(2, "0")}</span>
+                      <p style={{ ...t.bodyLg, color: "#2A322C", lineHeight: 1.7 }}>{s}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 操作 */}
+            <div className="flex" style={{ gap: "var(--gap-inline)", margin: "var(--sp-6) 0 var(--sp-6)" }}>
+              <Btn variant="ghost" className="flex-1" onClick={() => setOpenId(null)}>关闭</Btn>
+              <Btn
+                variant="secondary"
+                className="flex-1"
+                style={{ color: "var(--care-700)", borderColor: "var(--care-700)" }}
+                onClick={() => { if (confirm("删掉这条梦境？")) remove(open.id); }}
+              >
+                删除这条梦境
+              </Btn>
+            </div>
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }
