@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// 5 项等权，中间不做凸起 FAB（强推 AI 会冲突「用户主导书写」主张）
+// 6 项等权，中间不做凸起 FAB（强推 AI 会冲突「用户主导书写」主张）
 const ITEMS = [
   { href: "/", label: "营地", icon: "camp" },
   { href: "/journal", label: "记录", icon: "book" },
   { href: "/chat/pals", label: "聊聊", icon: "leaf" },
   { href: "/story", label: "故事", icon: "story" },
+  { href: "/box", label: "百宝箱", icon: "box" },
   { href: "/me", label: "我的", icon: "circles" },
 ] as const;
 
@@ -52,6 +53,15 @@ function Icon({ name, active }: { name: string; active: boolean }) {
         <svg {...common} aria-hidden>
           <path d="M4 6 h6 a2 2 0 0 1 2 2 v11 a2 2 0 0 0 -2 -2 H4 Z" fill={fill} fillOpacity={active ? 0.18 : 0} />
           <path d="M20 6 h-6 a2 2 0 0 0 -2 2 v11 a2 2 0 0 1 2 -2 h6 Z" fill={fill} fillOpacity={active ? 0.18 : 0} />
+        </svg>
+      );
+    case "box": // 百宝箱：宝箱 + 锁扣
+      return (
+        <svg {...common} aria-hidden>
+          <path d="M4 10 L12 6 L20 10 V19 H4 Z" fill={fill} fillOpacity={active ? 0.18 : 0} />
+          <path d="M4 10 h16" />
+          <path d="M12 10 v4" />
+          <circle cx="12" cy="14.5" r="1.2" fill="currentColor" />
         </svg>
       );
     default: // 同心圆（匿名，不用人形）
