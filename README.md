@@ -53,16 +53,16 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## 分支结构（每板块一条分支，改哪块切哪条）
 
-| 分支 | 对应模块 |
-|------|---------|
-| `main` | 集成主干（完整可运行版本） |
-| `feature/chat-ai-companion` | AI 陪伴对话（persona/记忆/表情包） |
-| `feature/story-boardgame` | 剧本 + 桌游《这一年的路》 |
-| `feature/journal-emotion` | 情绪记录日记 |
-| `feature/me-profile` | 个人中心 + 帮助页 |
-| `feature/base-shell` | 基座：布局/导航/设计 token/危机层 |
+| 分支 | 模块 | 核心文件 / 职责 |
+|------|------|----------------|
+| `main` | 集成主干 | 完整可运行版本（所有板块合入） |
+| `feature/chat-ai-companion` | AI 陪伴对话 | `src/app/chat`、`src/app/api/chat`、`src/lib/persona*.ts`、`src/components/companion`：栖栖 + 三只动物（栗栗/阿赤/团团）分角色人设、跨角色共享记忆串联、开场白随机不重复、颜文字、表情包（动物每 3-5 轮主动发）、新话题追加 |
+| `feature/story-boardgame` | 剧本 + 桌游 | `src/app/story`：叙事剧本、桌游《这一年的路》（12 格路径 + 随身格 + 风卡 + 时间胶囊） |
+| `feature/journal-emotion` | 情绪记录日记 | `src/app/journal`、`src/lib/db.ts`：标准月历视图（按月切换）、写 / 编辑 / 删除、回复过去的自己、5 态情绪 + 光/影/情绪/标签 |
+| `feature/me-profile` | 个人中心 | `src/app/me`：个人回顾、留在路上的话、心理援助热线帮助页 |
+| `feature/base-shell` | 基座 | `src/components/Shell`、`src/components/ui`、`src/lib/crisis.ts`：布局 / 导航 / 设计 token / 危机干预层 |
 
-> 约定：改某个板块时 `git checkout feature/<板块>`，只动对应 `src/app/<板块>` 及相关 lib/组件；改完合回 `main`。
+> 约定：改某个板块时 `git checkout feature/<板块>`，只动对应 `src/app/<板块>` 及相关 lib / 组件；改完合回 `main`。
 
 ## 环境变量
 
