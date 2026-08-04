@@ -19,8 +19,10 @@ import { COMPANIONS, getCompanion } from "@/lib/persona";
 import {
   buildMemoryContext,
   openerContext,
+  readMemory,
   touchSession,
   updateMemoryAfterMessage,
+  writeMemory,
 } from "@/lib/persona-memory";
 import { CompanionAvatar, companionName } from "@/components/companion/CompanionAvatar";
 import {
@@ -86,51 +88,66 @@ export default function Chat() {
     }
   }, []);
 
+  // 加载/重建当前角色会话：有历史则恢复，无历史则生成随机开场白（冷启动）
+  const loadConversation = async (id: string) => {
+    const companion = getCompanion(id);
+    const storeKey = `psy_chat_${id}`;
+    touchSession(id);
+
+    const raw = window.localStorage.getItem(storeKey);
+    if (raw) {
+      try {
+        const list = JSON.parse(raw) as Msg[];
+        if (list.length) {
+          setMsgs(list);
+          ready.current = true;
+          return;
+        }
+      } catch {
+        /* 忽略损坏的本地记录 */
+      }
+    }
+    // 冷启动开场白（随机变体）
+    let checkedInToday = false;
+    let lastNegative = false;
+    try {
+      const { getEntries } = await import("@/lib/db");
+      const entries = await getEntries();
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      checkedInToday = entries.some((e) => e.createdAt >= start.getTime());
+      lastNegative = entries.some((e) => e.quick <= 1);
+    } catch {
+      /* 本地库不可用时按冷启动处理 */
+    }
+    // 从记忆中取未完成话题 / 跨角色情绪线索
+    const memCtx = openerContext(id);
+    const opener = companion.buildOpener({
+      checkedInToday,
+      lastNegative: lastNegative || memCtx.lastNegative,
+      unfinishedTopic: memCtx.unfinishedTopic,
+    });
+    setMsgs([{ role: "assistant", content: opener }]);
+    ready.current = true;
+  };
+
   // 选中角色后加载会话
   useEffect(() => {
     if (!selectedId) return;
-    const companion = getCompanion(selectedId);
-    const storeKey = `psy_chat_${selectedId}`;
-    touchSession(selectedId);
-
-    (async () => {
-      const raw = window.localStorage.getItem(storeKey);
-      if (raw) {
-        try {
-          const list = JSON.parse(raw) as Msg[];
-          if (list.length) {
-            setMsgs(list);
-            ready.current = true;
-            return;
-          }
-        } catch {
-          /* 忽略损坏的本地记录 */
-        }
-      }
-      // 冷启动开场白
-      let checkedInToday = false;
-      let lastNegative = false;
-      try {
-        const { getEntries } = await import("@/lib/db");
-        const entries = await getEntries();
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        checkedInToday = entries.some((e) => e.createdAt >= start.getTime());
-        lastNegative = entries.some((e) => e.quick <= 1);
-      } catch {
-        /* 本地库不可用时按冷启动处理 */
-      }
-      // 从记忆中取未完成话题
-      const memCtx = openerContext(selectedId);
-      const opener = companion.buildOpener({
-        checkedInToday,
-        lastNegative: lastNegative || memCtx.lastNegative,
-        unfinishedTopic: memCtx.unfinishedTopic,
-      });
-      setMsgs([{ role: "assistant", content: opener }]);
-      ready.current = true;
-    })();
+    loadConversation(selectedId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
+
+  // 结束本次聊天，开启新话题：清空当前角色对话历史与未完成话题，记忆事实保留（供跨角色串联）
+  const startNewTopic = async () => {
+    if (!selectedId || pending) return;
+    window.localStorage.removeItem(`psy_chat_${selectedId}`);
+    const mem = readMemory(selectedId);
+    writeMemory(selectedId, { ...mem, unfinished: null });
+    setMsgs([]);
+    ready.current = false;
+    await loadConversation(selectedId);
+  };
 
   // 持久化消息
   useEffect(() => {
@@ -319,6 +336,25 @@ export default function Chat() {
           <div style={{ ...t.h3, color: "var(--forest-900)" }}>{companion.name}</div>
           <PrivacyBadge text="这段对话不会被保存到服务器" />
         </div>
+        <button
+          onClick={startNewTopic}
+          aria-label="开启新话题"
+          title="结束本次聊天，开启新话题"
+          className="shrink-0 flex items-center justify-center"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 999,
+            border: "1px solid var(--hairline)",
+            background: "var(--bg-elevated)",
+            color: "var(--text-tertiary)",
+            cursor: "pointer",
+          }}
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M17 3l4 4L8 20l-5 1 1-5L17 3z" />
+          </svg>
+        </button>
         <button
           onClick={switchCompanion}
           aria-label="换一只"
