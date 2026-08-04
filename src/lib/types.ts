@@ -201,12 +201,13 @@ export interface MindPractice {
   iconBg: string; // 卡片左侧色块背景
   iconEmoji: string;
   durationMin: [number, number]; // 推荐时长区间
-  tag: string; // "呼吸" / "白噪音" / "助眠" / "专注" 等
+  tag: string; // "放松" / "专注" / "助眠" 等
   companion: "lili" | "achi" | "tuan" | "yixi" | "kuki" | "brin" | null;
   greeting: { morning: string; noon: string; afternoon: string; evening: string; night: string };
   insight: string; // 引导核心句（卡片下方"开始"按钮旁的副文字）
   audio: MindAudioKey;
   breathPattern: { inhale: number; hold: number; exhale: number; holdAfter?: number };
+  cycleLabel: string; // 循环节奏文案，如 "吸 4s · 屏 4s · 呼 4s · 屏 4s"
   scenes: { morning: string; noon: string; afternoon: string; evening: string; night: string };
 }
 

@@ -14,7 +14,6 @@ import {
   TIME_GREETING_LABEL,
 } from "@/lib/mind-data";
 import { getMindSessions } from "@/lib/db";
-import { MIND_AUDIO_LABEL } from "@/lib/types";
 
 export default function MindLobby() {
   const router = useRouter();
@@ -85,7 +84,7 @@ export default function MindLobby() {
           margin: "var(--sp-4) 0 var(--sp-3)",
         }}
       >
-        选择一场练习
+        选择一种呼吸法
       </h2>
 
       <div className="flex flex-col" style={{ gap: "var(--gap-section)" }}>
@@ -127,23 +126,6 @@ export default function MindLobby() {
             {/* 右侧内容 */}
             <div className="grow" style={{ minWidth: 0 }}>
               <div className="flex items-center" style={{ gap: 6, marginBottom: 4 }}>
-                {p.companion && (
-                  <span
-                    title="有陪伴"
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 999,
-                      background: "var(--forest-50)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 11,
-                    }}
-                  >
-                    🔒
-                  </span>
-                )}
                 <h3 style={{ ...t.h3, color: "var(--forest-900)", margin: 0 }}>{p.name}</h3>
               </div>
               <p
@@ -172,11 +154,15 @@ export default function MindLobby() {
                 </span>
                 <span
                   style={{
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                    background: "#F3EEDA",
+                    color: "#7A5F1E",
                     fontSize: "var(--fs-caption)",
-                    color: "var(--text-tertiary)",
+                    fontWeight: 600,
                   }}
                 >
-                  ⏱ {p.durationMin[0]}–{p.durationMin[1]} 分钟
+                  🌀 {p.cycleLabel}
                 </span>
                 <span
                   style={{
@@ -184,7 +170,7 @@ export default function MindLobby() {
                     color: "var(--text-tertiary)",
                   }}
                 >
-                  · {MIND_AUDIO_LABEL[p.audio]}
+                  ⏱ {p.durationMin[0]}–{p.durationMin[1]} 分钟
                 </span>
               </div>
             </div>

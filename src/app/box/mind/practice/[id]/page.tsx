@@ -283,8 +283,7 @@ export default function PracticePage() {
               <div className="text-left">
                 <div style={{ ...t.body, fontWeight: 600, color: fg }}>{practice.name}</div>
                 <div style={{ ...t.caption, color: fgDim, marginTop: 2 }}>
-                  {practice.durationMin[0]}–{practice.durationMin[1]} 分钟 ·{" "}
-                  {MIND_AUDIO_LABEL[audioKey]}
+                  🌀 {practice.cycleLabel} · {practice.durationMin[0]}–{practice.durationMin[1]} 分钟
                 </div>
               </div>
             </div>

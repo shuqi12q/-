@@ -49,6 +49,23 @@ export default function MindRecords() {
     };
   }, [records]);
 
+  // 按呼吸法分组统计（4 种固定顺序 + 其他）
+  const perPractice = useMemo(() => {
+    const m = new Map<string, { name: string; min: number; count: number }>();
+    for (const r of records) {
+      const cur = m.get(r.practiceId) ?? { name: r.practiceName, min: 0, count: 0 };
+      cur.min += r.durationMin;
+      cur.count += 1;
+      m.set(r.practiceId, cur);
+    }
+    const order = ["belly", "box", "sleep478", "resonance"];
+    const rows = order
+      .filter((id) => m.has(id))
+      .map((id) => ({ id, ...m.get(id)! }));
+    const others = Array.from(m.entries()).filter(([id]) => !order.includes(id));
+    return { rows, others };
+  }, [records]);
+
   // 按日期分组
   const groups = useMemo(() => {
     const m = new Map<string, MindSessionRecord[]>();
@@ -126,6 +143,51 @@ export default function MindRecords() {
         </div>
         <div style={{ fontSize: 72 }}>🕯️</div>
       </div>
+
+      {/* 分呼吸法统计（4 种） */}
+      {!loading && perPractice.rows.length > 0 && (
+        <div className="fade-up" style={{ marginTop: "var(--sp-3)", marginBottom: "var(--sp-4)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+            {perPractice.rows.map((p) => (
+              <div
+                key={p.id}
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid var(--hairline)",
+                  borderRadius: "var(--r-lg)",
+                  padding: "12px 14px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,.03)",
+                }}
+              >
+                <div style={{ ...t.caption, color: "var(--text-secondary)", marginBottom: 4 }}>
+                  {p.name}
+                </div>
+                <div
+                  style={{
+                    ...t.bodyLg,
+                    fontWeight: 700,
+                    color: "var(--forest-900)",
+                    fontSize: 22,
+                  }}
+                >
+                  {p.min}
+                  <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 3, color: "var(--text-tertiary)" }}>
+                    分钟
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginLeft: 6 }}>
+                    {p.count} 次
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {perPractice.others.length > 0 && (
+            <p style={{ ...t.caption, color: "var(--text-tertiary)", marginTop: 8 }}>
+              其他练习：{perPractice.others.map(([id, v]) => `${v.name} ${v.min} 分钟`).join("、")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* 历史列表 */}
       <h2
