@@ -66,6 +66,9 @@ export default function Chat() {
   const [stickerOpen, setStickerOpen] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const ready = useRef(false);
+  // 表情包节奏：每 3-5 轮助手回复附带一个（前端强制节奏 + 模型挑 key）
+  const stickerTurnRef = useRef(0);
+  const stickerEveryRef = useRef(3 + Math.floor(Math.random() * 3));
 
   // 进入时优先使用 URL ?p= 指定角色（来自 /chat/pals 的选择），
   // 否则恢复上次选中的角色；都没有则进入选择页。
@@ -189,7 +192,13 @@ export default function Chat() {
 
     // 更新记忆
     updateMemoryAfterMessage(selectedId, trimmed);
-    const memCtx = buildMemoryContext(selectedId);
+    let memCtx = buildMemoryContext(selectedId);
+
+    // 表情包节奏：每 3-5 轮助手回复附带一个；本轮若到节奏点，给模型加一条强提示
+    const nextIsStickerTurn = curKey !== null && stickerTurnRef.current + 1 >= stickerEveryRef.current && !readSafeMode();
+    const stickerHint = nextIsStickerTurn
+      ? "\n\n【本轮你需要附带一个表情包】请在你回复正文的最后输出隐藏标记 ::sticker::<char>,<key>::（<char> 是 lili/achi/tuan 你自己，<key> 从你专属列表里选最贴切当前内容的一个；只输出一次，不解释、不提及）。"
+      : "";
 
     setPending(true);
     let acc = "";
@@ -201,7 +210,7 @@ export default function Chat() {
           messages: next.map((m) => ({ role: m.role, content: m.content })),
           safeMode: readSafeMode(),
           persona: selectedId,
-          memoryContext: memCtx,
+          memoryContext: memCtx + stickerHint,
         }),
       });
       if (!res.ok || !res.body) throw new Error("no stream");
@@ -221,6 +230,36 @@ export default function Chat() {
     } finally {
       setPending(false);
       setStreaming(false);
+
+      // 解析助手回复末尾的 ::sticker::<char>,<key>:: 标记，剥离后附加到消息
+      let sticker: { char: CompanionKey; key: string } | null = null;
+      let finalContent = acc;
+      if (curKey) {
+        const m = acc.match(/::sticker::(lili|achi|tuan),([\w-]+)::/);
+        if (m) {
+          const char = m[1] as CompanionKey;
+          const key = m[2];
+          if (char === curKey && STICKERS_BY_CHAR[char]?.some((s) => s.key === key)) {
+            sticker = { char, key };
+          }
+          finalContent = acc.replace(/::sticker::[^\n]*::/, "").trim();
+        }
+      }
+      // 模型没出 marker 但本轮本该发 → 兜底随机挑一个（保证节奏稳定）
+      if (nextIsStickerTurn && !sticker && curKey) {
+        const list = STICKERS_BY_CHAR[curKey];
+        const r = list && list.length > 0 ? list[Math.floor(Math.random() * list.length)] : null;
+        if (r) sticker = { char: curKey, key: r.key };
+      }
+      // 节奏计数：发出 sticker 重置 + 重新随机下一间隔；否则递增
+      if (sticker) {
+        stickerTurnRef.current = 0;
+        stickerEveryRef.current = 3 + Math.floor(Math.random() * 3);
+      } else {
+        stickerTurnRef.current += 1;
+      }
+      setMsgs([...next, { role: "assistant", content: finalContent, sticker: sticker ?? undefined }]);
+
       if (!acc.trim()) {
         setMsgs((prev) => {
           const last = prev[prev.length - 1];
@@ -337,25 +376,6 @@ export default function Chat() {
           <PrivacyBadge text="这段对话不会被保存到服务器" />
         </div>
         <button
-          onClick={startNewTopic}
-          aria-label="开启新话题"
-          title="结束本次聊天，开启新话题"
-          className="shrink-0 flex items-center justify-center"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 999,
-            border: "1px solid var(--hairline)",
-            background: "var(--bg-elevated)",
-            color: "var(--text-tertiary)",
-            cursor: "pointer",
-          }}
-        >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M17 3l4 4L8 20l-5 1 1-5L17 3z" />
-          </svg>
-        </button>
-        <button
           onClick={switchCompanion}
           aria-label="换一只"
           className="shrink-0 flex items-center justify-center"
@@ -395,40 +415,50 @@ export default function Chat() {
       {/* 消息区 */}
       <div className="flex flex-col" style={{ gap: "var(--sp-3)" }}>
         {msgs.map((m, i) => {
-          // 表情包消息
-          if (m.sticker) {
-            const isUser = m.role === "user";
-            return (
-              <div key={i} className={`flex fade-up ${isUser ? "justify-end" : ""}`} style={{ gap: "var(--gap-inline)" }}>
-                {!isUser && (
-                  <div className="shrink-0" style={{ paddingTop: 2 }}>
-                    {m.sticker.char ? <CompanionAvatar char={m.sticker.char} size={28} /> : <BreathingLeaf size={28} still />}
-                  </div>
-                )}
-                <div style={{ maxWidth: "78%" }}>
-                  <CompanionSticker char={m.sticker.char} sticker={m.sticker.key} size={168} />
-                </div>
+// 用户发的表情包消息（助手发的在下方助手分支里，文字 + sticker 一起渲染）
+        if (m.sticker && m.role === "user") {
+          return (
+            <div key={i} className="flex fade-up justify-end" style={{ gap: "var(--gap-inline)" }}>
+              <div style={{ maxWidth: "78%" }}>
+                <CompanionSticker char={m.sticker.char} sticker={m.sticker.key} size={168} />
               </div>
-            );
-          }
+            </div>
+          );
+        }
           // 文字消息
           return m.role === "assistant" ? (
             <div key={i} className="flex fade-up" style={{ gap: "var(--gap-inline)", maxWidth: "88%" }}>
               <div className="shrink-0" style={{ paddingTop: 2 }}>
                 {curKey ? <CompanionAvatar char={curKey} size={28} /> : <BreathingLeaf size={28} still />}
               </div>
-              <div
-                style={{
-                  background: "var(--bg-elevated)",
-                  color: "var(--text-primary)",
-                  borderRadius: "20px 20px 20px 6px",
-                  boxShadow: "var(--shadow-xs)",
-                  padding: "12px 16px",
-                  ...t.bodyLg,
-                }}
-              >
-                {m.content || (streaming && i === msgs.length - 1 ? "正在想…" : "")}
-                {streaming && i === msgs.length - 1 && m.content && <i className="caret" />}
+              <div className="flex flex-col" style={{ gap: 6, minWidth: 0 }}>
+                <div
+                  style={{
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-primary)",
+                    borderRadius: "20px 20px 20px 6px",
+                    boxShadow: "var(--shadow-xs)",
+                    padding: "12px 16px",
+                    ...t.bodyLg,
+                  }}
+                >
+                  {m.content || (streaming && i === msgs.length - 1 ? "正在想…" : "")}
+                  {streaming && i === msgs.length - 1 && m.content && <i className="caret" />}
+                </div>
+                {m.sticker && (
+                  <div
+                    style={{
+                      alignSelf: "flex-start",
+                      background: "var(--bg-elevated)",
+                      borderRadius: "16px 16px 16px 6px",
+                      boxShadow: "var(--shadow-xs)",
+                      padding: 6,
+                      display: "inline-block",
+                    }}
+                  >
+                    <CompanionSticker char={m.sticker.char} sticker={m.sticker.key} size={132} />
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -611,8 +641,33 @@ export default function Chat() {
             </svg>
           </button>
         </div>
-        <div className="text-center" style={{ padding: "var(--sp-2) 0" }}>
-          <PrivacyBadge text="你的内容只存在这台设备上" />
+        <div className="flex items-center" style={{ padding: "var(--sp-2) 0", gap: "var(--sp-3)" }}>
+          <button
+            onClick={startNewTopic}
+            disabled={pending}
+            aria-label="开启新话题"
+            title="结束本次聊天，开启新话题"
+            className="shrink-0 flex items-center no-underline"
+            style={{
+              gap: 6,
+              padding: "6px 12px",
+              borderRadius: 999,
+              border: "1px solid var(--hairline)",
+              background: "var(--bg-elevated)",
+              color: "var(--text-secondary)",
+              fontSize: "var(--fs-caption)",
+              cursor: pending ? "not-allowed" : "pointer",
+              opacity: pending ? 0.6 : 1,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M17 3l4 4L8 20l-5 1 1-5L17 3z" />
+            </svg>
+            <span>新话题</span>
+          </button>
+          <div className="flex-1 text-center">
+            <PrivacyBadge text="你的内容只存在这台设备上" />
+          </div>
         </div>
       </div>
 
