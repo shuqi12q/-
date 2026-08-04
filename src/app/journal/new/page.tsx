@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import CrisisLayer from "@/components/CrisisLayer";
 import PrivacyBadge from "@/components/PrivacyBadge";
 import Shell from "@/components/Shell";
@@ -15,6 +15,12 @@ import {
   readSuppress,
 } from "@/lib/crisis";
 import { EMO_12, TAG_PRESET, type QuickMood } from "@/lib/types";
+
+function fmtDay(ts: number) {
+  const d = new Date(ts);
+  const w = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][d.getDay()];
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日 · ${w}`;
+}
 
 const PH_LIGHT = [
   "今天有什么让你稍微松了口气的瞬间吗？",
@@ -47,6 +53,23 @@ function NewEntry() {
   const [crisis, setCrisis] = useState(false);
   const [pendingHits, setPendingHits] = useState<string[]>([]);
   const restored = useRef(false);
+
+  // 补写过去某天：?date=<timestamp(ms)>，默认写入那一天的中午
+  const targetTs = useMemo(() => {
+    const p = params.get("date");
+    if (!p) return null;
+    const ts = Number(p);
+    if (!Number.isFinite(ts) || Number.isNaN(new Date(ts).getTime())) return null;
+    const d2 = new Date(ts);
+    d2.setHours(12, 0, 0, 0);
+    return d2.getTime();
+  }, [params]);
+  const todayStart = useMemo(() => {
+    const d2 = new Date();
+    d2.setHours(0, 0, 0, 0);
+    return d2.getTime();
+  }, []);
+  const isBackdate = targetTs !== null && targetTs < todayStart;
 
   // 进入先恢复草稿；URL 上带 quick 时（首页一键打卡）优先用它
   useEffect(() => {
@@ -86,7 +109,7 @@ function NewEntry() {
     const { addEntry } = await import("@/lib/db");
     await addEntry({
       id: crypto.randomUUID(),
-      createdAt: Date.now(),
+      createdAt: targetTs ?? Date.now(),
       quick: d.quick as QuickMood,
       emotions: d.emotions,
       intensity: d.intensity,
@@ -121,7 +144,7 @@ function NewEntry() {
   return (
     <Shell>
       <h1 className="text-center" style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--gap-section)" }}>
-        今天，整体感觉怎么样？
+        {isBackdate && targetTs ? `${fmtDay(targetTs)}那天，整体感觉怎么样？` : "今天，整体感觉怎么样？"}
       </h1>
 
       {/* STEP 1 · 快速 5 态 */}
