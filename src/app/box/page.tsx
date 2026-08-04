@@ -13,6 +13,7 @@ const TOOLS = [
   { href: "/box/book", name: "答案之书", desc: "默念问题，翻开一页答案", icon: "book" },
   { href: "/box/clear", name: "烦恼消消", desc: "把烦恼写出来，一个个消掉", icon: "clear" },
   { href: "/box/zen", name: "松弛哲学", desc: "沉浸式呼吸，给神经松个口", icon: "zen" },
+  { href: "/box/muyu", name: "敲木鱼", desc: "笃笃笃，功德+1，给心留个安静的角落", icon: "muyu" },
   { href: "/box/firstaid", name: "情绪急救", desc: "现在很难受？先按步骤接住自己", icon: "firstaid" },
 ] as const;
 
@@ -31,6 +32,15 @@ function ToolIcon({ name }: { name: string }) {
       return (<svg {...c} aria-hidden><circle cx="9" cy="10" r="5.5" /><circle cx="17" cy="15" r="3.5" opacity=".6" /><path d="M5 21l14-8" opacity=".4" /></svg>);
     case "zen": // 圆 + 呼吸波纹
       return (<svg {...c} aria-hidden><circle cx="12" cy="12" r="3.2" /><circle cx="12" cy="12" r="7" opacity=".45" /><circle cx="12" cy="12" r="10.5" opacity=".2" /></svg>);
+    case "muyu": // 木鱼 + 敲击棒
+      return (
+        <svg {...c} aria-hidden>
+          <path d="M5 10a7 7 0 0 1 14 0v2H5z" />
+          <path d="M5 10h14" opacity=".5" />
+          <rect x="11" y="3.5" width="2.6" height="6" rx="1.3" transform="rotate(24 12 6.5)" />
+          <circle cx="17" cy="4" r="1.8" />
+        </svg>
+      );
     default: // 十字急救
       return (<svg {...c} aria-hidden><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M12 8.5v7M8.5 12h7" /></svg>);
   }
