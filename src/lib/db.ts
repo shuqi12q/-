@@ -1,5 +1,5 @@
 import Dexie, { Table } from "dexie";
-import { JournalEntry } from "./types";
+import { JournalEntry, JournalReply } from "./types";
 
 class PsyDB extends Dexie {
   entries!: Table<JournalEntry, string>;
@@ -35,6 +35,14 @@ export async function getEntriesInRange(from: number, to: number): Promise<Journ
 
 export async function deleteEntry(id: string) {
   await db.entries.delete(id);
+}
+
+// 给某条记录追加一条"回头回复"
+export async function addReplyToEntry(entryId: string, reply: JournalReply) {
+  const e = await db.entries.get(entryId);
+  if (!e) return;
+  const replies = [...(e.replies ?? []), reply];
+  await db.entries.put({ ...e, replies });
 }
 
 export async function clearAll() {

@@ -7,9 +7,7 @@ import PrivacyBadge from "@/components/PrivacyBadge";
 import { Btn, Card, HelpFooter, MOOD_LABEL, MOOD_VAR, Overline, t } from "@/components/ui";
 import type { JournalEntry } from "@/lib/types";
 
-const DAYS = 35;
-// 没记录的"今天"格子用浅棕色（参考用户截图），其他按心情色
-const TODAY_BG = "#E8DCC6";
+const WEEK_HEAD = ["日", "一", "二", "三", "四", "五", "六"];
 
 function fmtDay(ts: number) {
   const d = new Date(ts);
@@ -19,6 +17,10 @@ function fmtDay(ts: number) {
 function fmtTime(ts: number) {
   const d = new Date(ts);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function fmtShort(ts: number) {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日 ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 function dayKey(ts: number) {
   const d = new Date(ts);
@@ -43,7 +45,12 @@ export default function JournalList() {
     d.setHours(0, 0, 0, 0);
     return d.getTime();
   }, []);
+  // 视图月份（默认当前月）
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
   const [selectedDay, setSelectedDay] = useState<number>(todayStart);
+  // 回复输入框内容（按 entryId 存）
+  const [replyInput, setReplyInput] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     const { getEntries } = await import("@/lib/db");
@@ -60,11 +67,25 @@ export default function JournalList() {
     load();
   };
 
-  // 35 天网格：最后一格 = 今天，向前倒数 35 天
-  const cells = useMemo(
-    () => Array.from({ length: DAYS }, (_, i) => todayStart - (DAYS - 1 - i) * 86400000),
-    [todayStart],
-  );
+  // 给某条记录回一句（写给过去的自己）
+  const sendReply = async (entryId: string, text: string) => {
+    const v = text.trim();
+    if (!v) return;
+    const { addReplyToEntry } = await import("@/lib/db");
+    await addReplyToEntry(entryId, { id: crypto.randomUUID(), text: v, createdAt: Date.now() });
+    setReplyInput((p) => ({ ...p, [entryId]: "" }));
+    load();
+  };
+
+  // 标准月历网格：本月 1 日前的空位 + 1..天数
+  const cells = useMemo(() => {
+    const first = new Date(viewYear, viewMonth, 1);
+    const lead = first.getDay(); // 0=周日
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const arr: (number | null)[] = Array.from({ length: lead }, () => null);
+    for (let i = 1; i <= daysInMonth; i++) arr.push(new Date(viewYear, viewMonth, i).getTime());
+    return arr;
+  }, [viewYear, viewMonth]);
 
   // 按天分组（保留每天所有 entry）
   const byDay = useMemo(() => {
@@ -93,6 +114,26 @@ export default function JournalList() {
     return [...list].sort((a, b) => b.createdAt - a.createdAt);
   }, [byDay, selectedDay]);
 
+  const monthLabel = `${viewYear} 年 ${viewMonth + 1} 月`;
+  const goPrev = () => {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else setViewMonth((m) => m - 1);
+  };
+  const goNext = () => {
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else setViewMonth((m) => m + 1);
+  };
+  const goToday = () => {
+    const n = new Date();
+    setViewYear(n.getFullYear());
+    setViewMonth(n.getMonth());
+    setSelectedDay(todayStart);
+  };
+
   return (
     <Shell>
       <div className="flex items-center justify-between" style={{ marginBottom: "var(--gap-section)" }}>
@@ -102,53 +143,77 @@ export default function JournalList() {
         </Link>
       </div>
 
-      {/* 日历网格 */}
-      <Overline>最近 35 天</Overline>
-      <div className="grid" style={{ gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginTop: "var(--sp-3)" }}>
-        {cells.map((dayTs) => {
-          const isToday = dayTs === todayStart;
-          const isSelected = dayTs === selectedDay;
-          const k = dayKey(dayTs);
-          const q = dayMood.get(k);
-          const dayDate = new Date(dayTs);
-          const dayNum = dayDate.getDate();
-          const hasEntry = q !== undefined;
-          const moodVar = hasEntry ? MOOD_VAR[q as 0 | 1 | 2 | 3 | 4] : null;
-          const bg = isToday && !hasEntry
-            ? TODAY_BG
-            : hasEntry
-              ? `var(${moodVar})`
-              : "var(--bg-elevated)";
-          const numColor = isToday && !hasEntry
-            ? "var(--text-primary)"
-            : hasEntry
-              ? "#FFFFFF"
-              : "var(--text-secondary)";
-          return (
+      {/* 标准月历 */}
+      <Card style={{ padding: "var(--sp-5)" }}>
+        {/* 月份切换 */}
+        <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-4)" }}>
+          <div className="flex items-center" style={{ gap: "var(--gap-inline)" }}>
             <button
-              key={dayTs}
-              onClick={() => setSelectedDay(dayTs)}
-              aria-label={`${dayDate.getMonth() + 1} 月 ${dayNum} 日${hasEntry ? `，心情 ${MOOD_LABEL[q as 0 | 1 | 2 | 3 | 4]}` : ""}${isToday ? "（今天）" : ""}`}
+              onClick={goPrev}
+              aria-label="上个月"
               className="flex items-center justify-center"
-              style={{
-                aspectRatio: "1 / 1",
-                borderRadius: 8,
-                border: isSelected ? "2px solid var(--forest-700)" : "1px solid var(--hairline)",
-                background: bg,
-                cursor: "pointer",
-                padding: 0,
-                color: numColor,
-                fontSize: "var(--fs-caption)",
-                fontWeight: isSelected || isToday ? 600 : 400,
-                boxShadow: isSelected ? "var(--shadow-xs)" : "none",
-                transitionDuration: "var(--dur-fast)",
-              }}
+              style={{ width: 34, height: 34, borderRadius: 999, border: "1px solid var(--hairline)", background: "var(--bg-elevated)", color: "var(--text-secondary)", cursor: "pointer" }}
             >
-              {dayNum}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 6l-6 6 6 6" /></svg>
             </button>
-          );
-        })}
-      </div>
+            <span style={{ ...t.h3, color: "var(--forest-900)", minWidth: 108, textAlign: "center" }}>{monthLabel}</span>
+            <button
+              onClick={goNext}
+              aria-label="下个月"
+              className="flex items-center justify-center"
+              style={{ width: 34, height: 34, borderRadius: 999, border: "1px solid var(--hairline)", background: "var(--bg-elevated)", color: "var(--text-secondary)", cursor: "pointer" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+          </div>
+          <Btn variant="ghost" size="sm" onClick={goToday}>今天</Btn>
+        </div>
+
+        {/* 周表头 */}
+        <div className="grid" style={{ gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginBottom: 6 }}>
+          {WEEK_HEAD.map((w, i) => (
+            <div key={w} className="text-center" style={{ ...t.caption, color: "var(--text-tertiary)", paddingBottom: 2 }}>
+              {w}
+            </div>
+          ))}
+        </div>
+
+        {/* 日期网格 */}
+        <div className="grid" style={{ gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
+          {cells.map((dayTs, idx) => {
+            if (dayTs === null) return <div key={`x${idx}`} />;
+            const isToday = dayTs === todayStart;
+            const isSelected = dayTs === selectedDay;
+            const k = dayKey(dayTs);
+            const q = dayMood.get(k);
+            const dayDate = new Date(dayTs);
+            const hasEntry = q !== undefined;
+            const moodVar = hasEntry ? MOOD_VAR[q as 0 | 1 | 2 | 3 | 4] : null;
+            return (
+              <button
+                key={dayTs}
+                onClick={() => setSelectedDay(dayTs)}
+                aria-label={`${dayDate.getMonth() + 1} 月 ${dayDate.getDate()} 日${hasEntry ? `，心情 ${MOOD_LABEL[q as 0 | 1 | 2 | 3 | 4]}` : ""}${isToday ? "（今天）" : ""}`}
+                className="flex items-center justify-center"
+                style={{
+                  aspectRatio: "1 / 1",
+                  borderRadius: 8,
+                  border: isSelected ? "2px solid var(--forest-700)" : isToday ? "1.5px solid var(--forest-500)" : "1px solid var(--hairline)",
+                  background: hasEntry ? `var(${moodVar})` : "var(--bg-elevated)",
+                  color: hasEntry ? "#FFFFFF" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  padding: 0,
+                  fontSize: "var(--fs-caption)",
+                  fontWeight: isToday || isSelected ? 600 : 400,
+                  transitionDuration: "var(--dur-fast)",
+                }}
+              >
+                {dayDate.getDate()}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* 选中日期标题 + 写一篇 */}
       <div className="flex items-end justify-between" style={{ marginTop: "var(--gap-section)" }}>
@@ -181,13 +246,18 @@ export default function JournalList() {
                   <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>{fmtTime(e.createdAt)}</span>
                   <span style={{ ...t.caption, color: "var(--text-secondary)" }}>{MOOD_LABEL[e.quick]}</span>
                 </div>
-                <button
-                  onClick={() => setConfirmId(e.id)}
-                  aria-label="删除这一篇"
-                  style={{ ...t.caption, color: "var(--text-tertiary)", minHeight: 32, padding: "0 4px" }}
-                >
-                  删除
-                </button>
+                <div className="flex items-center" style={{ gap: "var(--gap-inline)" }}>
+                  <Link href={`/journal/new?edit=${e.id}`} className="no-underline" style={{ ...t.caption, color: "var(--forest-700)", minHeight: 32, padding: "0 4px", display: "inline-flex", alignItems: "center" }}>
+                    编辑
+                  </Link>
+                  <button
+                    onClick={() => setConfirmId(e.id)}
+                    aria-label="删除这一篇"
+                    style={{ ...t.caption, color: "var(--text-tertiary)", minHeight: 32, padding: "0 4px" }}
+                  >
+                    删除
+                  </button>
+                </div>
               </div>
 
               {e.light && (
@@ -208,6 +278,43 @@ export default function JournalList() {
                 </div>
               )}
 
+              {/* 回复过去的自己 */}
+              {(e.replies ?? []).length > 0 && (
+                <div className="flex flex-col" style={{ gap: 6, marginTop: "var(--sp-4)" }}>
+                  {(e.replies ?? []).map((r) => (
+                    <div key={r.id} style={{ background: "var(--bg-tint)", borderRadius: "var(--r-sm)", padding: "8px 12px" }}>
+                      <div style={{ ...t.caption, color: "var(--text-tertiary)" }}>{fmtShort(r.createdAt)} · 我</div>
+                      <p style={{ ...t.body, color: "var(--text-primary)", marginTop: 2 }}>{r.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex" style={{ gap: "var(--gap-inline)", marginTop: "var(--sp-3)" }}>
+                <input
+                  value={replyInput[e.id] ?? ""}
+                  onChange={(ev) => setReplyInput((p) => ({ ...p, [e.id]: ev.target.value }))}
+                  onKeyDown={(ev) => {
+                    if (ev.key === "Enter" && !ev.shiftKey) {
+                      ev.preventDefault();
+                      sendReply(e.id, replyInput[e.id] ?? "");
+                    }
+                  }}
+                  placeholder="回头看看，想对那天的自己说点什么…"
+                  className="flex-1"
+                  style={{
+                    background: "var(--bg-elevated)",
+                    border: "1px solid var(--forest-300)",
+                    borderRadius: "var(--r-sm)",
+                    padding: "0 12px",
+                    height: 34,
+                    fontSize: "var(--fs-caption)",
+                    color: "var(--text-primary)",
+                    outline: "none",
+                  }}
+                />
+                <Btn variant="secondary" size="sm" onClick={() => sendReply(e.id, replyInput[e.id] ?? "")}>回一句</Btn>
+              </div>
+
               {confirmId === e.id && (
                 <div className="flex items-center justify-between" style={{ marginTop: "var(--sp-4)", paddingTop: "var(--sp-3)", borderTop: "1px solid var(--divider)" }}>
                   <span style={{ ...t.caption, color: "var(--text-secondary)" }}>删掉这一篇？不可恢复。</span>
@@ -222,6 +329,18 @@ export default function JournalList() {
           ))}
         </div>
       )}
+
+      {/* 图例 */}
+      <div style={{ marginTop: "var(--gap-section)" }}>
+        <Overline>色块 = 当天心情</Overline>
+        <div className="flex items-center" style={{ gap: 6, marginTop: "var(--sp-3)" }}>
+          <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>很糟</span>
+          {MOOD_VAR.map((v) => (
+            <span key={v} style={{ width: 12, height: 12, borderRadius: 4, background: `var(${v})` }} />
+          ))}
+          <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>很好</span>
+        </div>
+      </div>
 
       <div className="text-center" style={{ marginTop: "var(--gap-section)" }}>
         <PrivacyBadge />

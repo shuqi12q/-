@@ -71,7 +71,10 @@ function NewEntry() {
   }, []);
   const isBackdate = targetTs !== null && targetTs < todayStart;
 
-  // 进入先恢复草稿；URL 上带 quick 时（首页一键打卡）优先用它
+  // 编辑已有记录：?edit=<entryId>
+  const editId = params.get("edit");
+
+  // 进入先恢复草稿；URL 上带 quick 时（首页一键打卡）优先用它；带 edit 时加载那一条预填
   useEffect(() => {
     const raw = window.localStorage.getItem("psy_draft");
     let next: Draft = EMPTY;
@@ -87,6 +90,25 @@ function NewEntry() {
     setD(next);
     setPh(Math.random() < 0.5 ? 0 : 1);
     restored.current = true;
+
+    // 编辑模式：读取原记录预填（不读草稿，直接覆盖）
+    if (editId) {
+      (async () => {
+        const { getEntry } = await import("@/lib/db");
+        const e = await getEntry(editId);
+        if (e) {
+          setD({
+            quick: e.quick,
+            emotions: e.emotions ?? [],
+            intensity: e.intensity,
+            light: e.light ?? "",
+            shadow: e.shadow ?? "",
+            tags: e.tags ?? [],
+          });
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
   // 边写边存本地草稿
@@ -106,6 +128,26 @@ function NewEntry() {
 
   const save = async () => {
     if (d.quick === null) return;
+    if (editId) {
+      // 编辑：保留原 createdAt / replies，只更新内容
+      const { getEntry, updateEntry } = await import("@/lib/db");
+      const old = await getEntry(editId);
+      if (old) {
+        await updateEntry({
+          ...old,
+          quick: d.quick as QuickMood,
+          emotions: d.emotions,
+          intensity: d.intensity,
+          light: d.light.trim(),
+          shadow: d.shadow.trim(),
+          tags: d.tags,
+        });
+        window.localStorage.removeItem("psy_draft");
+        setSaved(true);
+        router.push("/journal");
+        return;
+      }
+    }
     const { addEntry } = await import("@/lib/db");
     await addEntry({
       id: crypto.randomUUID(),
@@ -144,7 +186,11 @@ function NewEntry() {
   return (
     <Shell>
       <h1 className="text-center" style={{ ...t.h1, color: "var(--forest-900)", marginBottom: "var(--gap-section)" }}>
-        {isBackdate && targetTs ? `${fmtDay(targetTs)}那天，整体感觉怎么样？` : "今天，整体感觉怎么样？"}
+        {editId
+          ? "修改这段记录"
+          : isBackdate && targetTs
+            ? `${fmtDay(targetTs)}那天，整体感觉怎么样？`
+            : "今天，整体感觉怎么样？"}
       </h1>
 
       {/* STEP 1 · 快速 5 态 */}
@@ -307,7 +353,7 @@ function NewEntry() {
             想再说得具体一点吗？（可跳过）
           </Btn>
           <Btn size="lg" full disabled={!canSave} onClick={save}>
-            保存这一天
+            {editId ? "保存修改" : "保存这一天"}
           </Btn>
 
           {saved && (

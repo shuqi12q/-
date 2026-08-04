@@ -2,6 +2,13 @@
 
 export type QuickMood = 0 | 1 | 2 | 3 | 4; // 0 很糟 1 不太好 2 一般 3 还行 4 很好
 
+// 给过去的自己留言（回头看的回复）
+export interface JournalReply {
+  id: string;
+  text: string;
+  createdAt: number;
+}
+
 export interface JournalEntry {
   id: string;
   createdAt: number;
@@ -11,6 +18,7 @@ export interface JournalEntry {
   light: string; // 今天的「光」
   shadow: string; // 今天的「影」
   tags: string[];
+  replies?: JournalReply[]; // 自己回头回复的记录
 }
 
 export type CopingStyle = "avoid" | "please" | "direct" | "seek";
