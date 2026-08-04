@@ -61,6 +61,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 | `feature/journal-emotion` | 情绪记录日记 | `src/app/journal`、`src/lib/db.ts`：标准月历视图（按月切换）、写 / 编辑 / 删除、回复过去的自己、5 态情绪 + 光/影/情绪/标签 |
 | `feature/me-profile` | 个人中心 | `src/app/me`：个人回顾、留在路上的话、心理援助热线帮助页 |
 | `feature/base-shell` | 基座 | `src/components/Shell`、`src/components/ui`、`src/lib/crisis.ts`：布局 / 导航 / 设计 token / 危机干预层 |
+| `feature/box-tools` | 百宝箱 | `src/app/box`、`src/lib/box-data.ts`、`src/lib/mind-*.ts`：梦的解析（双模式 AI + 元素地图 + 情绪仪表盘 + 梦境卡片 + DNA）、转念器（AI 4 问 + 6 条转念）、决策币、答案之书、烦恼消消、情绪急救、敲木鱼；正念放映室（4 种呼吸法 + 时段背景 + 白噪音 + 呼吸引导 + 记录室分项统计） |
+| `feature/voice-dialog` | 实时语音 | `voice-proxy/server.mjs`、`src/lib/voice-dialog.ts`：火山豆包实时语音对话（volc.speech.dialog）接入正念模块语音陪伴，WS 代理转发鉴权 |
 
 > 约定：改某个板块时 `git checkout feature/<板块>`，只动对应 `src/app/<板块>` 及相关 lib / 组件；改完合回 `main`。
 
