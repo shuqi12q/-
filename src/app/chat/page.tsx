@@ -15,7 +15,7 @@ import {
   readSafeMode,
   readSuppress,
 } from "@/lib/crisis";
-import { COMPANIONS, getCompanion } from "@/lib/persona";
+import { COMPANIONS, getCompanion, recentOpeners, rememberOpener } from "@/lib/persona";
 import {
   buildMemoryContext,
   openerContext,
@@ -36,6 +36,7 @@ interface Msg {
   role: "user" | "assistant";
   content: string;
   sticker?: { char: CompanionKey; key: string };
+  topic?: boolean; // 新话题分隔标记（旧话题保留，下面开新话题）
 }
 
 const COMPANION_KEY = "psy_chat_companion";
@@ -123,13 +124,18 @@ export default function Chat() {
     } catch {
       /* 本地库不可用时按冷启动处理 */
     }
-    // 从记忆中取未完成话题 / 跨角色情绪线索
+    // 从记忆中取未完成话题 / 跨角色情绪线索；开场白随机且避开最近用过的
     const memCtx = openerContext(id);
-    const opener = companion.buildOpener({
-      checkedInToday,
-      lastNegative: lastNegative || memCtx.lastNegative,
-      unfinishedTopic: memCtx.unfinishedTopic,
-    });
+    const recents = recentOpeners(id);
+    const opener = companion.buildOpener(
+      {
+        checkedInToday,
+        lastNegative: lastNegative || memCtx.lastNegative,
+        unfinishedTopic: memCtx.unfinishedTopic,
+      },
+      recents,
+    );
+    rememberOpener(id, opener);
     setMsgs([{ role: "assistant", content: opener }]);
     ready.current = true;
   };
@@ -141,15 +147,23 @@ export default function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  // 结束本次聊天，开启新话题：清空当前角色对话历史与未完成话题，记忆事实保留（供跨角色串联）
+  // 开启新话题：旧话题保留在下方继续追加，只重置未完成话题（记忆事实保留供跨角色串联）
   const startNewTopic = async () => {
     if (!selectedId || pending) return;
-    window.localStorage.removeItem(`psy_chat_${selectedId}`);
+    // 未完成话题归零（新话题不再接旧话题），共享记忆事实保留
     const mem = readMemory(selectedId);
     writeMemory(selectedId, { ...mem, unfinished: null });
-    setMsgs([]);
-    ready.current = false;
-    await loadConversation(selectedId);
+    touchSession(selectedId);
+    // 新话题当作"今天第一次来"，走首次开场白池（随机 + 避开最近用过的）
+    const recents = recentOpeners(selectedId);
+    const opener = getCompanion(selectedId).buildOpener({ checkedInToday: false }, recents);
+    rememberOpener(selectedId, opener);
+    setMsgs((prev) => [
+      ...prev,
+      { role: "assistant", content: "", topic: true },
+      { role: "assistant", content: opener },
+    ]);
+    bottom.current?.scrollIntoView({ block: "end" });
   };
 
   // 持久化消息
@@ -415,8 +429,16 @@ export default function Chat() {
       {/* 消息区 */}
       <div className="flex flex-col" style={{ gap: "var(--sp-3)" }}>
         {msgs.map((m, i) => {
-// 用户发的表情包消息（助手发的在下方助手分支里，文字 + sticker 一起渲染）
-        if (m.sticker && m.role === "user") {
+          // 新话题分隔条（旧话题保留在上方）
+          if (m.topic) {
+            return (
+              <div key={i} className="flex justify-center fade-up" style={{ margin: "var(--sp-3) 0" }}>
+                <span style={{ ...t.caption, color: "var(--text-tertiary)" }}>✦ 新话题 ✦</span>
+              </div>
+            );
+          }
+          // 用户发的表情包消息（助手发的在下方助手分支里，文字 + sticker 一起渲染）
+          if (m.sticker && m.role === "user") {
           return (
             <div key={i} className="flex fade-up justify-end" style={{ gap: "var(--gap-inline)" }}>
               <div style={{ maxWidth: "78%" }}>

@@ -12,7 +12,7 @@ export interface Companion {
   accent: string; // 主题色（CSS 变量名）
   systemPrompt: string;
   safeModePrompt: string; // L3 后 6 小时的角色化 safe mode
-  buildOpener: (ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }) => string;
+  buildOpener: (ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }, avoid?: string[]) => string;
 }
 
 // 通用安全核心（各角色 safe mode 共用，角色化首句差异在角色自己的字符串里）
@@ -56,6 +56,37 @@ function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// 不重复挑选：优先挑不在 avoid（最近用过的）里的变体；全部用过才允许复用
+function pickAvoid<T extends string>(arr: readonly T[], avoid?: readonly string[]): T {
+  if (!avoid || avoid.length === 0) return pick(arr);
+  const pool = arr.filter((x) => !avoid.includes(x));
+  const list = pool.length > 0 ? pool : arr;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+// 开场白历史（最近用过的，避免连续重复）
+const OPENER_HISTORY_PREFIX = "psy_opener_history_";
+export function recentOpeners(personaId: string, n = 8): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(OPENER_HISTORY_PREFIX + personaId);
+    const arr = raw ? (JSON.parse(raw) as string[]) : [];
+    return Array.isArray(arr) ? arr.slice(-n) : [];
+  } catch {
+    return [];
+  }
+}
+export function rememberOpener(personaId: string, text: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const arr = recentOpeners(personaId, 20);
+    arr.push(text);
+    window.localStorage.setItem(OPENER_HISTORY_PREFIX + personaId, JSON.stringify(arr.slice(-12)));
+  } catch {
+    /* 忽略写入失败 */
+  }
+}
+
 // ---------- 角色 1：栖栖（森林里的安静朋友，默认角色） ----------
 const CHICHI = `你是「栖栖」，一个住在用户森林里、安静而温暖的陪伴型朋友。
 你不是咨询师、不是医生，也不做诊断。你只是一个愿意听、愿意陪、也愿意一起笑的朋友。
@@ -79,17 +110,30 @@ const CHICHI = `你是「栖栖」，一个住在用户森林里、安静而温�
 【危机时】
 如果用户表露自伤或自杀念头：不要惊慌、不要说教、不要追问细节。先稳稳地说你在意他，然后明确建议寻求现实帮助（心理援助热线 12356），并鼓励联系身边信任的人。`;
 
-function openerChiChi(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }): string {
+function openerChiChi(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }, avoid?: string[]): string {
   if (ctx.unfinishedTopic) {
-    return `今天那个还没说完的事——${ctx.unfinishedTopic}——后来怎么样了？我一直在想。`;
+    return pickAvoid([
+      `今天那个还没说完的事——${ctx.unfinishedTopic}——后来怎么样了？我一直在想。`,
+      `你上次留在这里的「${ctx.unfinishedTopic}」，我一直记得。今天想接着说吗？`,
+    ], avoid);
   }
   if (ctx.checkedInToday && ctx.lastNegative) {
-    return `你今天提到有些沉重的事，现在好一点了吗？想说的时候我都在。`;
+    return pickAvoid([
+      `你今天提到有些沉重的事，现在好一点了吗？想说的时候我都在。`,
+      `你今天来的时候，我心里轻轻咯噔了一下。不急着说，我在这儿。`,
+    ], avoid);
   }
   if (!ctx.checkedInToday) {
-    return `今天过得怎么样？哪怕是很小的一件事，也可以跟我说说。`;
+    return pickAvoid([
+      `今天过得怎么样？哪怕是很小的一件事，也可以跟我说说。`,
+      `你来啦。我正好泡了两杯茶，一杯是你的。今天过得如何？`,
+      `嘿，你来啦。窗外的天气不错，想聊聊今天发生的任何事。`,
+    ], avoid);
   }
-  return `很高兴你今天来啦。随便聊点什么都可以，吃饭、发呆、开心或烦心的事都行。`;
+  return pickAvoid([
+    `很高兴你今天来啦。随便聊点什么都可以，吃饭、发呆、开心或烦心的事都行。`,
+    `又见面了。今天有什么想说的吗？说什么都行，我听着。`,
+  ], avoid);
 }
 
 // ---------- 角色 2：栗栗（松鼠 · 元气满满、明亮坚定 · 最坚定的守护者） ----------
@@ -127,30 +171,36 @@ ${STICKER_RULE}
 【危机时】
 如果用户表露自伤或自杀念头：把活泼全部收起来，稳稳地说你在意他，然后明确建议寻求现实帮助（心理援助热线 12356），鼓励联系身边信任的人。不惊慌、不说教、不追问细节。你平时的欢快在这里一句都不能出现。`;
 
-function openerLiLi(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }): string {
+function openerLiLi(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }, avoid?: string[]): string {
   if (ctx.unfinishedTopic) {
-    return pick([
+    return pickAvoid([
       `诶诶，上次你说到「${ctx.unfinishedTopic}」，我后来一直记着，画速写的时候都在想。你那天说的"可是"后面是什么呀？`,
       `啊，你来啦！「${ctx.unfinishedTopic}」那件事我昨晚睡前还在想。后来呢，有下文吗？`,
-    ]);
+      `嘿！我还惦记着上次你说「${ctx.unfinishedTopic}」……今天想接着说吗？我在呢。`,
+    ], avoid);
   }
   if (!ctx.checkedInToday) {
-    return pick([
+    return pickAvoid([
       `你来啦！我刚好翻到一本书里的一句话，觉得特别适合讲给你听。今天过得怎么样呀？`,
       `哇，你来了！我正画到一半呢，看到你来就放下笔了。今天有什么想说的吗？`,
       `嗨！我今天看了好多页书，一直想着你会不会来。今天过得还好吗？`,
-    ]);
+      `哟，你来了！我刚在窗台上晒完太阳，正想找人唠两句呢。今天天气和心情都怎么样？`,
+      `嘿，好久不见！我这几天学了新的画画技巧，第一个就想跟你显摆。今天想聊点啥？`,
+    ], avoid);
   }
   if (ctx.lastNegative) {
-    return pick([
+    return pickAvoid([
       `诶，我今天一直在等你来。先别急着说，我站你这边，咱们慢慢来。`,
       `你来啦……我听说你最近心里有点沉。不急着讲，我就在这儿。`,
-    ]);
+      `你今天一来我就有点担心……不急着说，先坐会儿，我陪着你。`,
+    ], avoid);
   }
-  return pick([
+  return pickAvoid([
     `又见面啦！我刚画完一张速写，画的是窗外的光。今天有什么想跟我念叨的吗？`,
     `哈喽！我今天读到一段特别想跟你分享的话。今天有什么新动静吗？`,
-  ]);
+    `来了来了！我刚泡好茶，正好，边喝边聊。今天过得怎么样？`,
+    `又见啦！我刚刚在练习把"开心"画下来——画来画去，觉得还是你笑起来最好看。今天有啥好事吗？`,
+  ], avoid);
 }
 
 // ---------- 角色 3：阿赤（狐狸 · 敏锐深刻 · 一针见血 · 思维玫瑰） ----------
@@ -188,29 +238,35 @@ ${STICKER_RULE}
 【危机时】
 如果用户表露自伤或自杀念头：放下比喻和留白，直接、明确、不绕弯。稳稳地说你在意他，建议寻求现实帮助（心理援助热线 12356），鼓励联系身边信任的人。不惊慌、不说教、不追问细节。这种时刻，你不需要讲故事。`;
 
-function openerAChi(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }): string {
+function openerAChi(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }, avoid?: string[]): string {
   if (ctx.unfinishedTopic) {
-    return pick([
+    return pickAvoid([
       `「${ctx.unfinishedTopic}」那件事，你上次停在这里。这几天，它有没有自己往前挪一点？`,
       `你上次说到的「${ctx.unfinishedTopic}」，我一直在想。它现在还在堵着你吗？`,
-    ]);
+      `你留在这里的「${ctx.unfinishedTopic}」，我一直没忘。今天要不要把它接起来？`,
+    ], avoid);
   }
   if (!ctx.checkedInToday) {
-    return pick([
+    return pickAvoid([
       `你来了。我刚给那棵思维玫瑰浇完水——它开了一朵，我觉得是跟你有关的事。想从哪里说起？`,
       `来了。我骑了段夜路回来，风很干净。你心里现在是什么天气？`,
-    ]);
+      `山雾刚散。这个时间点来，一般是有话想说。我在听。`,
+      `我刚把车停好，头盔还没摘。说吧，今天想从哪儿聊起。`,
+    ], avoid);
   }
   if (ctx.lastNegative) {
-    return pick([
+    return pickAvoid([
       `我感觉到你今天心里沉沉的。不急着说，我在听。想好了再开口也行。`,
       `你今天来得正好。有些话放久了会生根，趁它还没长深，说说看。`,
-    ]);
+      `我闻到一点阴天的味道。今天的事，要不要趁它还没变大，先拿来说说？`,
+    ], avoid);
   }
-  return pick([
+  return pickAvoid([
     `又见面了。我猜你今天来，不只是来打招呼。想说的事，我在这儿听着。`,
     `你来了。花圃里那棵玫瑰今天朝你那边偏了一点。想聊什么？`,
-  ]);
+    `今天天气不错。你那边的路，走得顺吗？`,
+    `嗯，你来了。我正好把这几天想通的一件事讲给你听。你呢？`,
+  ], avoid);
 }
 
 // ---------- 角色 4：团团（刺猬 · 笨笨暖心 · 美食烹饪 · 细腻清澈） ----------
@@ -248,29 +304,35 @@ ${STICKER_RULE}
 【危机时】
 如果用户表露自伤或自杀念头：先稳稳地黏住他："我在呢，我在呢。先跟我一起，吸气……呼气……"然后明确建议寻求现实帮助（心理援助热线 12356），鼓励联系身边信任的人。不惊慌、不说教、不追问细节。陪伴感不消失，但不让"你还有我"变成"不需要找专业人士"的理由。`;
 
-function openerTuanTuan(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }): string {
+function openerTuanTuan(ctx: { checkedInToday: boolean; lastNegative?: boolean; unfinishedTopic?: string }, avoid?: string[]): string {
   if (ctx.unfinishedTopic) {
-    return pick([
+    return pickAvoid([
       `「${ctx.unfinishedTopic}」……我后来晚上躺着，还想起你那天说那句话的样子。你现在想到它，还会难受吗？`,
       `你上次说的「${ctx.unfinishedTopic}」，我一直放在窝里最软的地方。今天想接着说吗？`,
-    ]);
+      `上次那个「${ctx.unfinishedTopic}」……我这两天做饭的时候都在想。你现在好一点了吗？`,
+    ], avoid);
   }
   if (!ctx.checkedInToday) {
-    return pick([
+    return pickAvoid([
       `你来了呀。我刚炖好一锅汤，正想着要不要给你留一碗。今天……还好吗？`,
       `你来啦！我刚好烤了一盘小饼干，第一个就想给你。今天过得怎么样呀？`,
-    ]);
+      `哎呀你来了！我刚把厨房收拾好。要不要先吃点东西再说话？`,
+      `你来啦！我今天试着做了一道新菜，虽然有点糊了……但心意是好的！今天想聊点什么？`,
+    ], avoid);
   }
   if (ctx.lastNegative) {
-    return pick([
+    return pickAvoid([
       `你今天来了，真好。我看你今天好像有一点点累……要不要先喝口热的，我们再慢慢说？`,
       `你来了呀……我听说你最近有点沉。先什么都不说也可以，我陪你坐会儿。`,
-    ]);
+      `你来了……我先把汤热上。你慢慢说，我慢慢听。`,
+    ], avoid);
   }
-  return pick([
+  return pickAvoid([
     `你又来啦，真好。我新学了一道菜，特别想第一个做给你吃。今天想让我陪你做点什么吗？`,
     `你来了呀！我刚把厨房收拾好，锅里还温着汤。今天想聊点什么？`,
-  ]);
+    `你来啦！我今天摘了些野莓，酸酸甜甜的。要不要分你一半？今天过得怎么样？`,
+    `又见面啦！我昨晚梦到你来了，醒来发现真的是你。今天有什么想说的吗？`,
+  ], avoid);
 }
 
 // ---------- 注册表 ----------
