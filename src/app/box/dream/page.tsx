@@ -173,7 +173,9 @@ export default function DreamInput() {
       {/* 梦伴随的情绪（预设 + 自定义） */}
       <div style={{ marginTop: "var(--sp-5)" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-2)" }}>
-          <span style={{ ...t.body, color: TXT.mid }}>梦里伴随的情绪（可多选）</span>
+          <span style={{ ...t.body, fontWeight: 600, letterSpacing: 0.4, color: "#C28E5D" }}>
+            梦里伴随的情绪（可多选）
+          </span>
           <span style={{ ...t.caption, color: TXT.soft }}>{emotions.length} / 10+</span>
         </div>
         <div className="flex flex-wrap" style={{ gap: 8 }}>
@@ -240,7 +242,9 @@ export default function DreamInput() {
       {/* 清晰度 */}
       <div style={{ marginTop: "var(--sp-5)" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-2)" }}>
-          <span style={{ ...t.body, color: TXT.mid }}>梦境清晰度</span>
+          <span style={{ ...t.body, fontWeight: 600, letterSpacing: 0.4, color: "#C28E5D" }}>
+            梦境清晰度
+          </span>
           <span style={{ ...t.caption, color: "var(--care-600)", fontWeight: 600 }}>{clarity} / 10</span>
         </div>
         <input
@@ -264,7 +268,9 @@ export default function DreamInput() {
       {/* 场景 / 标签（预设 + 自定义） */}
       <div style={{ marginTop: "var(--sp-5)" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: "var(--sp-2)" }}>
-          <span style={{ ...t.body, color: TXT.mid }}>场景 / 标签</span>
+          <span style={{ ...t.body, fontWeight: 600, letterSpacing: 0.4, color: "#C28E5D" }}>
+            场景 / 标签
+          </span>
           <span style={{ ...t.caption, color: TXT.soft }}>{tags.length}</span>
         </div>
         <div className="flex flex-wrap" style={{ gap: 8 }}>
