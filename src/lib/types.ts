@@ -170,3 +170,54 @@ export const COPING_LABEL: Record<CopingStyle, string> = {
   direct: "直面型",
   seek: "求助型",
 };
+
+// =============== 正念 ===============
+
+export type MindTimeOfDay = "morning" | "noon" | "afternoon" | "evening" | "night";
+
+export type MindAudioKey =
+  | "rain"
+  | "stream"
+  | "forest"
+  | "campfire"
+  | "ocean"
+  | "wind"
+  | "silence";
+
+export const MIND_AUDIO_LABEL: Record<MindAudioKey, string> = {
+  rain: "雨声",
+  stream: "溪流",
+  forest: "森林鸟鸣",
+  campfire: "篝火",
+  ocean: "海浪",
+  wind: "晚风",
+  silence: "静音",
+};
+
+export interface MindPractice {
+  id: string;
+  name: string;
+  desc: string;
+  iconBg: string; // 卡片左侧色块背景
+  iconEmoji: string;
+  durationMin: [number, number]; // 推荐时长区间
+  tag: string; // "呼吸" / "白噪音" / "助眠" / "专注" 等
+  companion: "lili" | "achi" | "tuan" | "yixi" | "kuki" | "brin" | null;
+  greeting: { morning: string; noon: string; afternoon: string; evening: string; night: string };
+  insight: string; // 引导核心句（卡片下方"开始"按钮旁的副文字）
+  audio: MindAudioKey;
+  breathPattern: { inhale: number; hold: number; exhale: number; holdAfter?: number };
+  scenes: { morning: string; noon: string; afternoon: string; evening: string; night: string };
+}
+
+export interface MindSessionRecord {
+  id: string;
+  createdAt: number;
+  practiceId: string;
+  practiceName: string;
+  durationMin: number;
+  audio: MindAudioKey;
+  moodEmoji?: string;
+  moodText?: string;
+  note?: string;
+}

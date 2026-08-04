@@ -13,7 +13,7 @@ const TOOLS = [
   { href: "/box/coin", name: "决策币", desc: "抛一枚硬币，看清心里的倾向", icon: "coin" },
   { href: "/box/book", name: "答案之书", desc: "默念问题，翻开一页答案", icon: "book" },
   { href: "/box/clear", name: "烦恼消消", desc: "把烦恼写出来，一个个消掉", icon: "clear" },
-  { href: "/box/zen", name: "松弛哲学", desc: "沉浸式呼吸，给神经松个口", icon: "zen" },
+  { href: "/box/mind", name: "正念放映室", desc: "8 场练习 + 实时背景 + 白噪音 + 呼吸引导", icon: "mind" },
   { href: "/box/muyu", name: "敲木鱼", desc: "笃笃笃，功德+1，给心留个安静的角落", icon: "muyu" },
   { href: "/box/firstaid", name: "情绪急救", desc: "现在很难受？先按步骤接住自己", icon: "firstaid" },
 ] as const;
@@ -33,8 +33,13 @@ function ToolIcon({ name }: { name: string }) {
       return (<svg {...c} aria-hidden><path d="M12 6.5C10 5 7 4.7 4 5.2V18.2c3-.5 6-.2 8 1.3M12 6.5c2-1.5 5-1.8 8-1.3V18.2c-3-.5-6-.2-8 1.3" /></svg>);
     case "clear": // 泡泡
       return (<svg {...c} aria-hidden><circle cx="9" cy="10" r="5.5" /><circle cx="17" cy="15" r="3.5" opacity=".6" /><path d="M5 21l14-8" opacity=".4" /></svg>);
-    case "zen": // 圆 + 呼吸波纹
-      return (<svg {...c} aria-hidden><circle cx="12" cy="12" r="3.2" /><circle cx="12" cy="12" r="7" opacity=".45" /><circle cx="12" cy="12" r="10.5" opacity=".2" /></svg>);
+    case "mind": // 莲花 + 呼吸圈
+      return (
+        <svg {...c} aria-hidden>
+          <path d="M12 4c2.4 3 4 6 4 9a4 4 0 1 1-8 0c0-3 1.6-6 4-9Z" />
+          <path d="M12 11v8M9 16h6" opacity=".5" />
+        </svg>
+      );
     case "muyu": // 木鱼 + 敲击棒
       return (
         <svg {...c} aria-hidden>

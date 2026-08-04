@@ -1,19 +1,23 @@
 import Dexie, { Table } from "dexie";
-import { JournalEntry, JournalReply, DreamRecord } from "./types";
+import { JournalEntry, JournalReply, DreamRecord, MindSessionRecord } from "./types";
 
 class PsyDB extends Dexie {
   entries!: Table<JournalEntry, string>;
   dreams!: Table<DreamRecord, string>;
+  mindSessions!: Table<MindSessionRecord, string>;
   constructor() {
     super("psycare");
-    // v1: 情绪记录 entries
     this.version(1).stores({
       entries: "id,createdAt",
     });
-    // v2: 新增梦境记录 dreams；entries 保持不变
     this.version(2).stores({
       entries: "id,createdAt",
       dreams: "id,createdAt,*tags",
+    });
+    this.version(3).stores({
+      entries: "id,createdAt",
+      dreams: "id,createdAt,*tags",
+      mindSessions: "id,createdAt",
     });
   }
 }
@@ -71,4 +75,18 @@ export async function getDream(id: string): Promise<DreamRecord | undefined> {
 }
 export async function deleteDream(id: string) {
   await db.dreams.delete(id);
+}
+
+// ---------- 正念记录 CRUD ----------
+export async function addMindSession(r: MindSessionRecord) {
+  await db.mindSessions.add(r);
+}
+export async function getMindSessions(): Promise<MindSessionRecord[]> {
+  return (await db.mindSessions.orderBy("createdAt").reverse().toArray()) as MindSessionRecord[];
+}
+export async function updateMindSession(r: MindSessionRecord) {
+  await db.mindSessions.put(r);
+}
+export async function deleteMindSession(id: string) {
+  await db.mindSessions.delete(id);
 }
